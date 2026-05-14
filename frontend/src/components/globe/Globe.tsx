@@ -44,6 +44,10 @@ export interface GlobeWrapperProps {
   height?: number;
   mini?: boolean;
   disableScroll?: boolean;
+  globeImageUrl?: string;
+  bumpImageUrl?: string;
+  atmosphereColor?: string;
+  atmosphereAltitude?: number;
 }
 
 export function Globe(props: GlobeWrapperProps) {

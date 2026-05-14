@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_OPTIONS=--max-old-space-size=1536 next dev --disable-source-maps",
+    "dev:lowmem": "NODE_OPTIONS=--max-old-space-size=768 next dev --disable-source-maps",
+    "dev:full": "next dev --disable-source-maps",
+    "dev:turbo": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -13,11 +16,12 @@
     "@tanstack/react-query": "^5.100.10",
     "axios": "^1.16.1",
     "framer-motion": "^12.38.0",
-    "next": "16.2.6",
+    "next": "^15.5.18",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-globe.gl": "^2.37.1",
     "three": "^0.184.0",
+    "zod": "^4.4.3",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

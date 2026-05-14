@@ -1,12 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { SignInButton, useUser } from '@clerk/nextjs';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { launchApi } from '@/lib/api';
+import { launchApi, userApi } from '@/lib/api';
 import type { Launch } from '@/lib/api';
-import { CountdownTimer } from '@/components/ui/CountdownTimer';
+import { CountdownTimer, ReticleCard } from '@/components/ui';
 
 export default function LaunchesPage() {
+  const { user, isSignedIn } = useUser();
+  const queryClient = useQueryClient();
+  const email = user?.primaryEmailAddress?.emailAddress;
+
   const { data: upcoming, isLoading: upcomingLoading } = useQuery({
     queryKey: ['launches-upcoming'],
     queryFn: launchApi.getUpcoming,
@@ -25,7 +30,70 @@ export default function LaunchesPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { isSuccess: accountSynced } = useQuery({
+    queryKey: ['user-sync', user?.id, email],
+    queryFn: () => userApi.sync(user!.id, email!),
+    enabled: Boolean(user?.id && email),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: bookmarksData } = useQuery({
+    queryKey: ['user-bookmarks', user?.id],
+    queryFn: () => userApi.getBookmarks(user!.id),
+    enabled: Boolean(user?.id && accountSynced),
+    staleTime: 30 * 1000,
+  });
+
+  const { data: alertsData } = useQuery({
+    queryKey: ['user-alerts', user?.id],
+    queryFn: () => userApi.getAlerts(user!.id),
+    enabled: Boolean(user?.id && accountSynced),
+    staleTime: 30 * 1000,
+  });
+
+  const saveLaunch = useMutation({
+    mutationFn: (launch: Launch) =>
+      userApi.createBookmark(user!.id, {
+        type: 'launch',
+        referenceId: launch.id,
+        metadata: {
+          title: launch.name,
+          net: launch.net,
+          provider: launch.launch_service_provider?.name,
+          rocket: launch.rocket?.configuration?.full_name || launch.rocket?.configuration?.name,
+          pad: launch.pad?.name,
+          status: launch.status.name,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-bookmarks', user?.id] });
+    },
+  });
+
+  const createLaunchAlert = useMutation({
+    mutationFn: (launch: Launch) =>
+      userApi.createAlert(user!.id, {
+        alertType: 'launch',
+        config: {
+          referenceId: launch.id,
+          title: launch.name,
+          net: launch.net,
+          provider: launch.launch_service_provider?.name,
+          status: launch.status.name,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-alerts', user?.id] });
+    },
+  });
+
   const liveStream = upcoming?.find((l) => l.webcast_live);
+  const savedLaunchIds = new Set(bookmarksData?.bookmarks.filter((bookmark) => bookmark.type === 'launch').map((bookmark) => bookmark.referenceId) || []);
+  const alertLaunchIds = new Set(
+    alertsData?.alerts
+      .filter((alert) => alert.alertType === 'launch' && typeof alert.config.referenceId === 'string')
+      .map((alert) => alert.config.referenceId as string) || []
+  );
 
   return (
     <div style={{ paddingTop: '80px', minHeight: '100vh', background: 'var(--color-void)' }} className="select-none">
@@ -56,7 +124,7 @@ export default function LaunchesPage() {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6 }}
-            className="mb-12"
+            className="mb-20"
           >
             <ReticleCard className="p-2 bg-void/90 border-amber/40 glow-amber">
               <div className="p-4 bg-amber/5 flex items-center justify-between border-b border-amber/10">
@@ -81,8 +149,8 @@ export default function LaunchesPage() {
         )}
 
         {/* Upcoming Launches Catalog */}
-        <section className="mb-24">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8">
+        <section style={{ marginBottom: '9rem' }}>
+          <div className="flex items-center justify-between border-b border-white/10 pb-5 mb-10">
             <h2 className="font-display text-3xl text-white tracking-tight">SCHEDULED OPERATIONS</h2>
             <span className="font-mono text-[0.65rem] text-silver/50">ACTIVE CADENCE</span>
           </div>
@@ -94,7 +162,19 @@ export default function LaunchesPage() {
           ) : (
             <div className="space-y-4">
               {upcoming?.map((launch, i) => (
-                <LaunchCard key={launch.id} launch={launch} index={i} />
+                <LaunchCard
+                  key={launch.id}
+                  launch={launch}
+                  index={i}
+                  isSignedIn={Boolean(isSignedIn)}
+                  accountReady={!isSignedIn || accountSynced}
+                  isBookmarked={savedLaunchIds.has(launch.id)}
+                  hasAlert={alertLaunchIds.has(launch.id)}
+                  isSaving={saveLaunch.isPending && saveLaunch.variables?.id === launch.id}
+                  isCreatingAlert={createLaunchAlert.isPending && createLaunchAlert.variables?.id === launch.id}
+                  onSave={() => saveLaunch.mutate(launch)}
+                  onCreateAlert={() => createLaunchAlert.mutate(launch)}
+                />
               ))}
             </div>
           )}
@@ -102,8 +182,15 @@ export default function LaunchesPage() {
 
         {/* SpaceX Active Launch Vehicle Infrastructure */}
         {spacex?.rockets && (
-          <section className="mb-24">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8">
+          <section
+            style={{
+              marginTop: '6rem',
+              marginBottom: '9rem',
+              paddingTop: '5rem',
+              borderTop: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-5 mb-10">
               <h2 className="font-display text-3xl text-white tracking-tight">SPACEX HARDWARE FLEET</h2>
               <span className="font-mono text-[0.65rem] text-silver/50">REUSABLE ARCHITECTURES</span>
             </div>
@@ -137,8 +224,15 @@ export default function LaunchesPage() {
         )}
 
         {/* Past Operational Log */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8">
+        <section
+          style={{
+            marginTop: '6rem',
+            marginBottom: '5rem',
+            paddingTop: '5rem',
+            borderTop: '1px solid rgba(255,255,255,0.12)',
+          }}
+        >
+          <div className="flex items-center justify-between border-b border-white/10 pb-5 mb-10">
             <h2 className="font-display text-3xl text-white tracking-tight">OPERATIONAL ARCHIVE</h2>
             <span className="font-mono text-[0.65rem] text-silver/50">VERIFIED LOGS</span>
           </div>
@@ -155,7 +249,7 @@ export default function LaunchesPage() {
                   <div className="space-y-1">
                     <div className="font-display text-lg text-white tracking-tight">{launch.name}</div>
                     <div className="text-[0.65rem] text-silver/60">
-                      {launch.launch_service_provider?.name} // {new Date(launch.net).toISOString().slice(0, 10)}
+                      {launch.launch_service_provider?.name} <span aria-hidden="true">{'//'}</span> {new Date(launch.net).toISOString().slice(0, 10)}
                     </div>
                   </div>
 
@@ -183,7 +277,29 @@ export default function LaunchesPage() {
   );
 }
 
-function LaunchCard({ launch, index }: { launch: Launch; index: number }) {
+function LaunchCard({
+  launch,
+  index,
+  isSignedIn,
+  accountReady,
+  isBookmarked,
+  hasAlert,
+  isSaving,
+  isCreatingAlert,
+  onSave,
+  onCreateAlert,
+}: {
+  launch: Launch;
+  index: number;
+  isSignedIn: boolean;
+  accountReady: boolean;
+  isBookmarked: boolean;
+  hasAlert: boolean;
+  isSaving: boolean;
+  isCreatingAlert: boolean;
+  onSave: () => void;
+  onCreateAlert: () => void;
+}) {
   const isPrimary = index === 0;
   return (
     <motion.div
@@ -205,7 +321,7 @@ function LaunchCard({ launch, index }: { launch: Launch; index: number }) {
             </h3>
 
             <div className="font-mono text-xs text-silver/60 pt-1">
-              <span className="text-white/80">{launch.rocket?.configuration?.full_name}</span> // {launch.pad?.name}
+              <span className="text-white/80">{launch.rocket?.configuration?.full_name}</span> <span aria-hidden="true">{'//'}</span> {launch.pad?.name}
             </div>
           </div>
 
@@ -214,6 +330,30 @@ function LaunchCard({ launch, index }: { launch: Launch; index: number }) {
               NET: {new Date(launch.net).toUTCString()}
             </span>
             <CountdownTimer targetDate={launch.net} />
+            <div className="mt-5 flex flex-wrap items-center gap-2 lg:justify-end">
+              {isSignedIn ? (
+                <>
+                  <LaunchActionButton
+                    label={!accountReady ? 'SYNCING...' : isBookmarked ? 'SAVED' : isSaving ? 'SAVING...' : 'SAVE MISSION'}
+                    tone="cyan"
+                    disabled={!accountReady || isBookmarked || isSaving}
+                    onClick={onSave}
+                  />
+                  <LaunchActionButton
+                    label={!accountReady ? 'SYNCING...' : hasAlert ? 'ALERT SET' : isCreatingAlert ? 'SETTING...' : 'SET ALERT'}
+                    tone="amber"
+                    disabled={!accountReady || hasAlert || isCreatingAlert}
+                    onClick={onCreateAlert}
+                  />
+                </>
+              ) : (
+                <SignInButton mode="modal">
+                  <button className="border border-cyan/40 px-3 py-2 font-mono text-[0.6rem] font-bold tracking-widest text-cyan transition-colors hover:bg-cyan hover:text-void">
+                    SIGN IN TO SAVE
+                  </button>
+                </SignInButton>
+              )}
+            </div>
           </div>
         </div>
       </ReticleCard>
@@ -221,14 +361,29 @@ function LaunchCard({ launch, index }: { launch: Launch; index: number }) {
   );
 }
 
-function ReticleCard({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any }) {
+function LaunchActionButton({
+  label,
+  tone,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  tone: 'cyan' | 'amber';
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const toneClass = tone === 'cyan'
+    ? 'border-cyan/40 text-cyan hover:bg-cyan hover:text-void'
+    : 'border-amber/40 text-amber hover:bg-amber hover:text-void';
+
   return (
-    <div className={`relative border border-white/10 rounded-none ${className}`} {...props}>
-      <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan pointer-events-none" />
-      <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan pointer-events-none" />
-      {children}
-    </div>
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`border px-3 py-2 font-mono text-[0.6rem] font-bold tracking-widest transition-colors disabled:cursor-default disabled:border-white/10 disabled:text-silver/35 disabled:hover:bg-transparent ${toneClass}`}
+    >
+      {label}
+    </button>
   );
 }

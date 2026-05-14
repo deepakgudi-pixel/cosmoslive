@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { newsApi } from '@/lib/api';
+import { ReticleCard } from '@/components/ui';
 import type { NewsArticle } from '@/lib/api';
 
 const TAGS = ['SpaceX', 'NASA', 'ISS', 'Mars', 'Moon', 'Launches', 'Webb', 'ESA', 'ISRO'];
@@ -185,14 +186,4 @@ function ArticleCard({ article, index }: { article: NewsArticle; index: number }
   );
 }
 
-function ReticleCard({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any }) {
-  return (
-    <div className={`relative border border-white/10 rounded-none ${className}`} {...props}>
-      <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan pointer-events-none" />
-      <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan pointer-events-none" />
-      {children}
-    </div>
-  );
-}
+

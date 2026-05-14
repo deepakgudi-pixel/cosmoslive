@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { issApi } from '@/lib/api';
-import { Globe } from '@/components/globe/Globe';
+import { ReticleCard, YoutubeLiveFeed } from '@/components/ui';
 
 export default function ISSPage() {
   const { data: position, dataUpdatedAt } = useQuery({
@@ -12,17 +12,12 @@ export default function ISSPage() {
     refetchInterval: 10000,
   });
 
-  const { data: crewData } = useQuery({
+  const { data: crewData, isLoading: isCrewLoading } = useQuery({
     queryKey: ['iss-crew'],
     queryFn: issApi.getCrew,
     staleTime: 6 * 60 * 60 * 1000,
   });
-
-  const { data: stream } = useQuery({
-    queryKey: ['iss-stream'],
-    queryFn: issApi.getStream,
-    staleTime: Infinity,
-  });
+  const crew = crewData?.crew ?? [];
 
   return (
     <div style={{ paddingTop: '80px', minHeight: '100vh', background: 'var(--color-void)' }} className="select-none">
@@ -51,7 +46,7 @@ export default function ISSPage() {
         </motion.div>
 
         {/* Live Video + Position Console Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-40">
 
           {/* HD Earth Feed Viewport */}
           <motion.div
@@ -61,16 +56,12 @@ export default function ISSPage() {
             className="lg:col-span-2"
           >
             <ReticleCard className="p-2 bg-void/50 aspect-video relative overflow-hidden h-full flex flex-col justify-between">
-              <iframe
-                src={stream?.url || 'https://www.youtube.com/embed/xAieE-QtOeM?autoplay=1&mute=1'}
+              <YoutubeLiveFeed
+                videoId="FuuC4dpSQ1M"
                 title="ISS Live Feed"
                 className="w-full h-full border-none absolute inset-0"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
+                volume={60}
               />
-              <div className="absolute top-4 left-4 z-10">
-                <span className="status-live bg-void/80 backdrop-blur-md">NASA HD FEED</span>
-              </div>
             </ReticleCard>
           </motion.div>
 
@@ -117,15 +108,21 @@ export default function ISSPage() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-24"
+          className="border-y border-white/10"
+          style={{
+            marginTop: '7rem',
+            marginBottom: '8rem',
+            paddingTop: '4.5rem',
+            paddingBottom: '4.5rem',
+          }}
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between border-b border-white/10 pb-6 mb-12">
             <h2 className="font-display text-3xl text-white tracking-tight">ACTIVE PERSONNEL MANIFEST</h2>
             <span className="font-mono text-[0.65rem] text-silver/50">EXPEDITION ABOARD</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {crewData?.crew?.map((member, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {crew.length > 0 ? crew.map((member, i) => (
               <motion.div
                 key={member.name}
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -142,46 +139,23 @@ export default function ISSPage() {
                   </div>
 
                   <div className="pt-4 mt-4 border-t border-white/5 text-[0.55rem] font-mono text-silver/30 text-right">
-                    SYS_DESIG: ACTIVE
-                  </div>
-                </ReticleCard>
-              </motion.div>
-            )) ?? (
+                  SYS_DESIG: ACTIVE
+                </div>
+              </ReticleCard>
+            </motion.div>
+            )) : isCrewLoading ? (
               Array.from({ length: 7 }).map((_, i) => (
                 <ReticleCard key={i} className="p-6 h-36 bg-surface/20 border-white/5 animate-pulse" />
               ))
+            ) : (
+              <ReticleCard className="p-6 bg-surface/40 border-white/10 sm:col-span-2 lg:col-span-4">
+                <span className="data-label text-[0.55rem] text-cyan block mb-2">MANIFEST LINK STANDBY</span>
+                <p className="font-mono text-xs text-silver/60 leading-relaxed">
+                  Live personnel data is temporarily unavailable. Station telemetry remains active.
+                </p>
+              </ReticleCard>
             )}
           </div>
-        </motion.section>
-
-        {/* Local Station Viewport Mini Globe */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-24"
-        >
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8">
-            <h2 className="font-display text-3xl text-white tracking-tight">ORBITAL INTERFACE SIMULATION</h2>
-            <span className="font-mono text-[0.65rem] text-silver/50">3D RENDERING</span>
-          </div>
-
-          <ReticleCard className="p-2 bg-void/50 h-[450px] relative overflow-hidden">
-            <Globe
-              satellites={[]}
-              issPosition={position ?? null}
-              height={450}
-              mini={false}
-            />
-            <div className="absolute bottom-6 left-6 z-10 flex items-center gap-4 bg-void/80 backdrop-blur px-4 py-2 border border-white/10">
-              <span className="status-live">STATION ORBIT DETECTED</span>
-              {position && (
-                <span className="font-mono text-xs text-white">
-                  {position.lat.toFixed(2)}°N / {position.lng.toFixed(2)}°E
-                </span>
-              )}
-            </div>
-          </ReticleCard>
         </motion.section>
 
         {/* Structural Spec Sheets */}
@@ -189,14 +163,14 @@ export default function ISSPage() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-12"
+          className="pt-24 pb-32"
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between border-b border-white/10 pb-6 mb-12">
             <h2 className="font-display text-3xl text-white tracking-tight">STATION STRUCTURAL SPECIFICATIONS</h2>
             <span className="font-mono text-[0.65rem] text-silver/50">PHYSICAL DIMENSIONS</span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               { label: 'TOTAL MASS', value: '419,725 KG' },
               { label: 'LENGTH AXIS', value: '109 METERS' },
@@ -224,18 +198,6 @@ function TelemetryRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between font-mono text-xs">
       <span className="text-silver/60 text-[0.65rem]">{label}</span>
       <span className="text-white font-bold">{value}</span>
-    </div>
-  );
-}
-
-function ReticleCard({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any }) {
-  return (
-    <div className={`relative border border-white/10 rounded-none ${className}`} {...props}>
-      <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan pointer-events-none" />
-      <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan pointer-events-none" />
-      {children}
     </div>
   );
 }

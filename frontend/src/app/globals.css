@@ -447,9 +447,627 @@ h1, h2, h3 {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   CLERK AUTH HUD THEME
+   ═══════════════════════════════════════════════════════════ */
+.cosmos-clerk-avatar,
+.cl-userButtonAvatarBox {
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid rgba(0, 229, 255, 0.28) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.12) !important;
+}
+
+.cosmos-clerk-popover,
+.cl-userButtonPopoverCard {
+  overflow: hidden !important;
+  width: 320px !important;
+  border: 1px solid rgba(0, 229, 255, 0.26) !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(180deg, rgba(5, 11, 20, 0.96), rgba(0, 0, 0, 0.98)) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 24px 70px rgba(0, 0, 0, 0.76),
+    0 0 38px rgba(0, 229, 255, 0.1) !important;
+  color: var(--color-white) !important;
+  backdrop-filter: blur(26px) saturate(1.15) !important;
+}
+
+.cosmos-clerk-popover::before,
+.cl-userButtonPopoverCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(0, 229, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
+}
+
+.cosmos-clerk-popover-main,
+.cl-userButtonPopoverMain {
+  position: relative !important;
+  background: transparent !important;
+  padding: 0.9rem !important;
+}
+
+.cosmos-clerk-preview,
+.cl-userPreview {
+  gap: 0.75rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  padding: 0.75rem !important;
+}
+
+.cosmos-clerk-preview-name,
+.cl-userPreviewMainIdentifier {
+  color: var(--color-white) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.cosmos-clerk-preview-email,
+.cl-userPreviewSecondaryIdentifier {
+  color: rgba(148, 163, 184, 0.78) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.62rem !important;
+}
+
+.cosmos-clerk-action,
+.cl-userButtonPopoverActionButton {
+  height: 40px !important;
+  border-radius: 0 !important;
+  color: rgba(241, 245, 249, 0.82) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.cosmos-clerk-action:hover,
+.cl-userButtonPopoverActionButton:hover {
+  background: rgba(0, 229, 255, 0.1) !important;
+  color: var(--color-white) !important;
+}
+
+.cosmos-clerk-action-icon,
+.cl-userButtonPopoverActionButtonIconBox {
+  color: var(--color-cyan) !important;
+}
+
+.cosmos-clerk-popover-footer,
+.cl-userButtonPopoverFooter {
+  position: relative !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(0, 0, 0, 0.32) !important;
+  color: rgba(148, 163, 184, 0.55) !important;
+  font-family: var(--font-mono) !important;
+}
+
+body [class*="cl-userButtonPopoverCard"] {
+  overflow: hidden !important;
+  width: 320px !important;
+  border: 1px solid rgba(0, 229, 255, 0.32) !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(180deg, rgba(5, 11, 20, 0.98), rgba(0, 0, 0, 0.98)) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 26px 80px rgba(0, 0, 0, 0.82),
+    0 0 44px rgba(0, 229, 255, 0.13) !important;
+  color: var(--color-white) !important;
+  backdrop-filter: blur(28px) saturate(1.15) !important;
+}
+
+body [class*="cl-userButtonPopoverCard"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(0, 229, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
+}
+
+body [class*="cl-userButtonPopoverMain"],
+body [class*="cl-userButtonPopoverFooter"] {
+  position: relative !important;
+  z-index: 1 !important;
+  background: transparent !important;
+}
+
+body [class*="cl-userButtonPopoverMain"] {
+  padding: 0.85rem !important;
+}
+
+body [class*="cl-userPreview"] {
+  border-radius: 0 !important;
+}
+
+body [class*="cl-userPreview__userButton"] {
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  padding: 0.75rem !important;
+}
+
+body [class*="cl-avatarBox"],
+body [class*="cl-userPreviewAvatarBox"] {
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.16) !important;
+}
+
+body [class*="cl-userPreviewMainIdentifier"],
+body [class*="cl-userPreviewMainIdentifierText"] {
+  color: var(--color-white) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+}
+
+body [class*="cl-userPreviewSecondaryIdentifier"] {
+  color: rgba(148, 163, 184, 0.78) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.62rem !important;
+}
+
+body [class*="cl-userButtonPopoverActions"] {
+  padding-top: 0.65rem !important;
+}
+
+body [class*="cl-userButtonPopoverActionButton"] {
+  height: 42px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgba(241, 245, 249, 0.82) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+body [class*="cl-userButtonPopoverActionButton"]:hover {
+  background: rgba(0, 229, 255, 0.11) !important;
+  color: var(--color-white) !important;
+}
+
+body [class*="cl-userButtonPopoverActionButtonIconBox"],
+body [class*="cl-userButtonPopoverActionButtonIcon"] {
+  color: var(--color-cyan) !important;
+}
+
+body [class*="cl-userButtonPopoverFooter"] {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(0, 0, 0, 0.36) !important;
+}
+
+body [class*="cl-userButtonPopoverFooter"] * {
+  color: rgba(148, 163, 184, 0.64) !important;
+  font-family: var(--font-mono) !important;
+}
+
+body [class*="cl-modalContent"],
+body [class*="cl-card"],
+body [class*="cl-rootBox"],
+body [class*="cl-signIn"],
+body [class*="cl-signUp"] {
+  color: var(--color-cyan) !important;
+}
+
+body [class*="cl-modalContent"] [class*="cl-"],
+body [class*="cl-card"] [class*="cl-"],
+body [class*="cl-signIn"] [class*="cl-"],
+body [class*="cl-signUp"] [class*="cl-"] {
+  color: var(--color-cyan) !important;
+  border-color: rgba(0, 229, 255, 0.24) !important;
+}
+
+body [class*="cl-headerTitle"],
+body [class*="cl-headerSubtitle"],
+body [class*="cl-formHeaderTitle"],
+body [class*="cl-formHeaderSubtitle"],
+body [class*="cl-formFieldLabel"],
+body [class*="cl-formFieldHintText"],
+body [class*="cl-formFieldSuccessText"],
+body [class*="cl-formFieldWarningText"],
+body [class*="cl-footerActionText"],
+body [class*="cl-footerActionLink"],
+body [class*="cl-identityPreviewText"],
+body [class*="cl-identityPreviewEditButton"],
+body [class*="cl-dividerText"],
+body [class*="cl-alternativeMethodsBlockButton"],
+body [class*="cl-alternativeMethodsBlockButtonText"],
+body [class*="cl-socialButtonsBlockButtonText"],
+body [class*="cl-formButtonReset"],
+body [class*="cl-formResendCodeLink"],
+body [class*="cl-backLink"],
+body [class*="cl-breadcrumbsItem"],
+body [class*="cl-otpCodeFieldInput"] {
+  color: var(--color-cyan) !important;
+  font-family: var(--font-mono) !important;
+}
+
+body [class*="cl-headerTitle"],
+body [class*="cl-formHeaderTitle"] {
+  color: var(--color-white) !important;
+  font-family: var(--font-display) !important;
+  font-size: 2.2rem !important;
+  letter-spacing: 0 !important;
+}
+
+body [class*="cl-headerSubtitle"],
+body [class*="cl-formHeaderSubtitle"],
+body [class*="cl-footerActionText"],
+body [class*="cl-dividerText"] {
+  color: rgba(143, 216, 255, 0.86) !important;
+}
+
+body [class*="cl-socialButtonsBlockButton"],
+body [class*="cl-alternativeMethodsBlockButton"],
+body [class*="cl-formButtonPrimary"] {
+  border: 1px solid rgba(0, 229, 255, 0.28) !important;
+  border-radius: 0 !important;
+  background: rgba(0, 229, 255, 0.08) !important;
+  color: var(--color-cyan) !important;
+  box-shadow: none !important;
+}
+
+body [class*="cl-socialButtonsBlockButton"]:hover,
+body [class*="cl-alternativeMethodsBlockButton"]:hover,
+body [class*="cl-formButtonPrimary"]:hover {
+  background: rgba(0, 229, 255, 0.16) !important;
+  color: var(--color-white) !important;
+}
+
+body [class*="cl-socialButtonsBlockButtonText"],
+body [class*="cl-alternativeMethodsBlockButtonText"],
+body [class*="cl-formButtonPrimary"] span {
+  color: var(--color-cyan) !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+body [class*="cl-socialButtonsBlockButton"] svg,
+body [class*="cl-alternativeMethodsBlockButton"] svg,
+body [class*="cl-card"] svg,
+body [class*="cl-modalContent"] svg {
+  color: var(--color-cyan) !important;
+  fill: currentColor !important;
+}
+
+body [class*="cl-formFieldInput"] {
+  color: var(--color-white) !important;
+  caret-color: var(--color-cyan) !important;
+}
+
+body [class*="cl-formFieldInput"]::placeholder {
+  color: rgba(143, 216, 255, 0.55) !important;
+}
+
+body [class*="cl-alert"],
+body [class*="cl-formFieldErrorText"],
+body [class*="cl-errorText"] {
+  color: #ff6a7a !important;
+  font-family: var(--font-mono) !important;
+}
+
+html body .cosmos-auth-modal,
+html body .cosmos-auth-card-box,
+html body .cosmos-auth-card,
+html body [class*="cl-cardBox"],
+html body [class*="cl-card"] {
+  color: var(--color-cyan) !important;
+  background:
+    linear-gradient(180deg, rgba(5, 11, 20, 0.98), rgba(0, 0, 0, 0.98)) !important;
+}
+
+html body .cosmos-auth-modal *,
+html body .cosmos-auth-card-box *,
+html body .cosmos-auth-card *,
+html body [class*="cl-cardBox"] *,
+html body [class*="cl-card"] * {
+  color: var(--color-cyan) !important;
+  border-color: rgba(0, 229, 255, 0.24) !important;
+}
+
+html body .cosmos-auth-card,
+html body [class*="cl-card"] {
+  border: 1px solid rgba(0, 229, 255, 0.34) !important;
+  border-radius: 0 !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 30px 90px rgba(0, 0, 0, 0.86),
+    0 0 48px rgba(0, 229, 255, 0.12) !important;
+}
+
+html body .cosmos-auth-title,
+html body [class*="cl-headerTitle"],
+html body [class*="cl-formHeaderTitle"] {
+  color: var(--color-white) !important;
+  font-family: var(--font-display) !important;
+  font-size: 2.25rem !important;
+}
+
+html body .cosmos-auth-subtitle,
+html body .cosmos-auth-label,
+html body .cosmos-auth-provider-text,
+html body .cosmos-auth-divider-text,
+html body .cosmos-auth-footer-text,
+html body .cosmos-auth-footer-link,
+html body .cosmos-auth-hint,
+html body [class*="cl-headerSubtitle"],
+html body [class*="cl-formFieldLabel"],
+html body [class*="cl-socialButtonsBlockButtonText"],
+html body [class*="cl-dividerText"],
+html body [class*="cl-footerActionText"],
+html body [class*="cl-footerActionLink"],
+html body [class*="cl-formFieldHintText"] {
+  color: var(--color-cyan) !important;
+  font-family: var(--font-mono) !important;
+  opacity: 1 !important;
+}
+
+html body .cosmos-auth-provider-button,
+html body [class*="cl-socialButtonsBlockButton"],
+html body .cosmos-auth-primary-button,
+html body [class*="cl-formButtonPrimary"] {
+  border: 1px solid rgba(0, 229, 255, 0.36) !important;
+  border-radius: 0 !important;
+  background: rgba(0, 229, 255, 0.1) !important;
+  color: var(--color-cyan) !important;
+}
+
+html body .cosmos-auth-provider-button *,
+html body [class*="cl-socialButtonsBlockButton"] *,
+html body .cosmos-auth-primary-button *,
+html body [class*="cl-formButtonPrimary"] * {
+  color: var(--color-cyan) !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  opacity: 1 !important;
+}
+
+html body .cosmos-auth-provider-button:hover,
+html body [class*="cl-socialButtonsBlockButton"]:hover,
+html body .cosmos-auth-primary-button:hover,
+html body [class*="cl-formButtonPrimary"]:hover {
+  background: rgba(0, 229, 255, 0.18) !important;
+}
+
+html body .cosmos-auth-provider-icon,
+html body [class*="cl-socialButtonsProviderIcon"],
+html body [class*="cl-providerIcon"],
+html body .cosmos-auth-close,
+html body .cosmos-auth-close *,
+html body .cosmos-auth-password-toggle,
+html body .cosmos-auth-password-toggle *,
+html body .cosmos-auth-password-icon,
+html body [class*="cl-modalCloseButton"],
+html body [class*="cl-modalCloseButton"] *,
+html body [class*="cl-formFieldInputShowPasswordButton"],
+html body [class*="cl-formFieldInputShowPasswordButton"] *,
+html body [class*="cl-formFieldInputShowPasswordIcon"] {
+  color: var(--color-cyan) !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  opacity: 1 !important;
+}
+
+html body .cosmos-auth-input,
+html body [class*="cl-formFieldInput"],
+html body [class*="cl-input"] {
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: var(--color-white) !important;
+  caret-color: var(--color-cyan) !important;
+  border: 1px solid rgba(0, 229, 255, 0.28) !important;
+  box-shadow: none !important;
+}
+
+html body .cosmos-auth-input::placeholder,
+html body [class*="cl-formFieldInput"]::placeholder,
+html body [class*="cl-input"]::placeholder {
+  color: rgba(143, 216, 255, 0.72) !important;
+  opacity: 1 !important;
+}
+
+html body .cosmos-auth-divider-line,
+html body [class*="cl-dividerLine"] {
+  background: rgba(0, 229, 255, 0.3) !important;
+}
+
+html body .cosmos-auth-footer,
+html body [class*="cl-footer"] {
+  background: rgba(0, 0, 0, 0.42) !important;
+}
+
+html body .cosmos-auth-badge,
+html body [class*="cl-lastAuthenticationStrategyBadge"] {
+  background: rgba(0, 229, 255, 0.16) !important;
+  color: var(--color-cyan) !important;
+  border: 1px solid rgba(0, 229, 255, 0.32) !important;
+  font-family: var(--font-mono) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOMEPAGE ORBIT BACKDROP
+   ═══════════════════════════════════════════════════════════ */
+.hero-orbit-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 58% 46%, rgba(143, 216, 255, 0.18), transparent 17%),
+    radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, #02050a 0%, #050915 48%, #010207 100%);
+}
+
+.hero-earth-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  filter: brightness(1.08) contrast(1.08) saturate(1.08);
+  transition: opacity 1.4s linear;
+}
+
+.hero-earth-video.is-active {
+  opacity: 0.82;
+}
+
+.hero-video-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 46%, transparent 18%, rgba(0, 0, 0, 0.16) 54%, rgba(0, 0, 0, 0.72) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.62), transparent 26%, transparent 62%, rgba(0, 0, 0, 0.54)),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 36%, rgba(0, 0, 0, 0.78));
+}
+
+.hero-starfield {
+  position: absolute;
+  inset: -12%;
+  opacity: 0.32;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(0, 229, 255, 0.7) 0 1px, transparent 1.5px);
+  background-position: 0 0, 38px 52px;
+  background-size: 130px 130px, 190px 190px;
+  animation: heroStarDrift 42s linear infinite;
+}
+
+.hero-starfield-b {
+  opacity: 0.18;
+  transform: scale(1.2);
+  animation-duration: 68s;
+  animation-direction: reverse;
+}
+
+.hero-satellite-trace {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 22px currentColor;
+  opacity: 0.8;
+  animation: heroSatelliteDrift 12s linear infinite;
+}
+
+.hero-satellite-trace-a {
+  left: 12%;
+  top: 28%;
+  color: var(--color-cyan);
+  background: var(--color-cyan);
+}
+
+.hero-satellite-trace-b {
+  left: 78%;
+  top: 62%;
+  color: var(--color-amber);
+  background: var(--color-amber);
+  animation-duration: 16s;
+  animation-delay: -5s;
+}
+
+.hero-satellite-trace-c {
+  left: 58%;
+  top: 18%;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.85);
+  animation-duration: 20s;
+  animation-delay: -9s;
+}
+
+@keyframes heroStarDrift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-120px, 90px, 0); }
+}
+
+@keyframes heroSatelliteDrift {
+  0% {
+    transform: translate3d(-16px, 10px, 0) scale(0.8);
+    opacity: 0;
+  }
+  12%, 82% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate3d(130px, -76px, 0) scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SATELLITE HUD SIMULATION
+   ═══════════════════════════════════════════════════════════ */
+.satellite-hud-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.satellite-hud-frame {
+  position: absolute;
+  inset: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.satellite-hud-corner {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-color: rgba(0, 229, 255, 0.42);
+}
+
+.satellite-hud-corner-tl {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.satellite-hud-corner-tr {
+  top: -1px;
+  right: -1px;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.satellite-hud-corner-bl {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+
+.satellite-hud-corner-br {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+
+/* ═══════════════════════════════════════════════════════════
    RESPONSIVE BASE
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   body { cursor: auto; }
   .cursor-dot, .cursor-ring { display: none; }
+  .satellite-hud-frame {
+    opacity: 0.35;
+  }
 }

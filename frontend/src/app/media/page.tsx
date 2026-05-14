@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { mediaApi } from '@/lib/api';
+import { ReticleCard } from '@/components/ui';
 
 type MediaTab = 'apod' | 'nasa';
 
@@ -201,7 +202,7 @@ export default function MediaPage() {
                   transition={{ delay: i * 0.03 }}
                   onClick={() =>
                     setLightbox({
-                      url: item.links[0].href,
+                      url: item.links![0].href,
                       title: item.data[0]?.title || 'NASA Image',
                       desc: item.data[0]?.description || '',
                     })
@@ -211,7 +212,7 @@ export default function MediaPage() {
                 >
                   <ReticleCard className="p-2 bg-surface group-hover:bg-surface-hover transition-colors flex flex-col justify-between h-full">
                     <div className="aspect-[4/3] relative overflow-hidden bg-black/40 mb-3">
-                      <Image src={item.links[0].href} alt={item.data[0]?.title || 'NASA'} fill style={{ objectFit: 'cover' }} className="group-hover:scale-105 transition-transform duration-500" unoptimized />
+                      <Image src={item.links![0].href} alt={item.data[0]?.title || 'NASA'} fill style={{ objectFit: 'cover' }} className="group-hover:scale-105 transition-transform duration-500" unoptimized />
                     </div>
                     <div>
                       <span className="font-mono text-[0.55rem] text-silver/50 block mb-1">
@@ -231,14 +232,4 @@ export default function MediaPage() {
   );
 }
 
-function ReticleCard({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any }) {
-  return (
-    <div className={`relative border border-white/10 rounded-none ${className}`} {...props}>
-      <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan pointer-events-none" />
-      <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan pointer-events-none" />
-      {children}
-    </div>
-  );
-}
+

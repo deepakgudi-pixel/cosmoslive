@@ -1,150 +1,293 @@
 'use client';
 
-import { useUser, SignInButton } from '@clerk/nextjs';
+import { SignInButton, useUser } from '@clerk/nextjs';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import React from 'react';
+import { ReticleCard } from '@/components/ui';
+import { userApi } from '@/lib/api';
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
+  const queryClient = useQueryClient();
+  const email = user?.primaryEmailAddress?.emailAddress;
+
+  const { isSuccess: accountSynced } = useQuery({
+    queryKey: ['user-sync', user?.id, email],
+    queryFn: () => userApi.sync(user!.id, email!),
+    enabled: Boolean(user?.id && email),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: bookmarksData, isLoading: bookmarksLoading } = useQuery({
+    queryKey: ['user-bookmarks', user?.id],
+    queryFn: () => userApi.getBookmarks(user!.id),
+    enabled: Boolean(user?.id && accountSynced),
+    staleTime: 30 * 1000,
+  });
+
+  const { data: alertsData, isLoading: alertsLoading } = useQuery({
+    queryKey: ['user-alerts', user?.id],
+    queryFn: () => userApi.getAlerts(user!.id),
+    enabled: Boolean(user?.id && accountSynced),
+    staleTime: 30 * 1000,
+  });
+
+  const deleteBookmark = useMutation({
+    mutationFn: (bookmarkId: string) => userApi.deleteBookmark(user!.id, bookmarkId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-bookmarks', user?.id] });
+    },
+  });
+
+  const deleteAlert = useMutation({
+    mutationFn: (alertId: string) => userApi.deleteAlert(user!.id, alertId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-alerts', user?.id] });
+    },
+  });
 
   if (!isLoaded) {
     return (
-      <div style={{ paddingTop: '80px', minHeight: '100vh', background: 'var(--color-void)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="select-none">
+      <ProfileShell center>
         <ReticleCard className="p-8 bg-surface">
-          <span className="data-label animate-pulse text-cyan">VERIFYING COMMANDER CLEARANCE...</span>
+          <span className="data-label animate-pulse text-cyan">LOADING ACCOUNT...</span>
         </ReticleCard>
-      </div>
+      </ProfileShell>
     );
   }
 
   if (!user) {
     return (
-      <div style={{ paddingTop: '80px', minHeight: '100vh', background: 'var(--color-void)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="select-none">
-        <div style={{ maxWidth: '600px', width: '100%', padding: '2rem' }}>
-          <ReticleCard className="p-12 bg-surface text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="inline-block w-1 h-1 bg-amber animate-pulse" />
-              <span className="data-label text-amber">AUTHENTICATION PROTOCOL</span>
-            </div>
-            <h1 className="font-display text-white tracking-tight leading-none mb-4" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)' }}>
-              MISSION<br /><span className="text-silver/40">COMMANDER</span>
+      <ProfileShell center>
+        <div style={{ maxWidth: '520px', width: '100%', padding: '2rem' }}>
+          <ReticleCard className="p-10 bg-surface text-center">
+            <span className="data-label text-amber block mb-3">SIGN IN REQUIRED</span>
+            <h1 className="font-display text-5xl text-white tracking-tight leading-none mb-4">
+              ACCOUNT ACCESS
             </h1>
             <p className="font-mono text-xs text-silver/70 max-w-sm mx-auto leading-relaxed mb-8">
-              Sign in with protected SSO protocols to preserve your orbital telemetry caches, custom launch alerts, and global bookmarks.
+              Sign in to view your CosmosLive account details.
             </p>
             <SignInButton mode="modal">
               <button className="btn-primary w-full text-center">
-                ESTABLISH ENCRYPTED LINK →
+                SIGN IN
               </button>
             </SignInButton>
           </ReticleCard>
         </div>
-      </div>
+      </ProfileShell>
     );
   }
 
+  const createdAt = user.createdAt
+    ? new Date(user.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'Unknown';
+
   return (
-    <div style={{ paddingTop: '80px', minHeight: '100vh', background: 'var(--color-void)' }} className="select-none">
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+    <ProfileShell>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', width: '100%' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <ReticleCard className="p-6 md:p-8 bg-surface">
+            <div className="flex flex-col gap-8 md:flex-row md:items-center">
+              <div className="relative shrink-0">
+                {user.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.imageUrl}
+                    alt={user.fullName || 'Account avatar'}
+                    className="h-24 w-24 border border-cyan/40 object-cover"
+                  />
+                ) : (
+                  <div className="h-24 w-24 border border-cyan/40 bg-void flex items-center justify-center font-display text-3xl text-cyan">
+                    {(user.fullName || user.username || 'U').slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute bottom-0 right-0 bg-cyan px-1 font-mono text-[0.55rem] font-bold text-void">
+                  ACTIVE
+                </span>
+              </div>
 
-        {/* Commander ID Specs Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ marginBottom: '4rem' }}>
-          <ReticleCard className="p-6 md:p-8 bg-surface flex flex-col md:flex-row items-center gap-6 md:gap-8">
-            <div className="relative">
-              {user.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.imageUrl}
-                  alt={user.fullName || 'Commander'}
-                  className="w-24 h-24 rounded-none border border-cyan/40 object-cover"
-                />
-              ) : (
-                <div className="w-24 h-24 bg-void border border-cyan/40 flex items-center justify-center text-2xl">
-                  👨‍🚀
+              <div className="min-w-0 flex-1">
+                <span className="data-label text-cyan block mb-2">SIGNED IN ACCOUNT</span>
+                <h1 className="font-display text-4xl md:text-5xl text-white tracking-tight leading-none mb-3 truncate">
+                  {user.fullName || user.username || 'CosmosLive User'}
+                </h1>
+                <div className="font-mono text-xs text-silver/70 truncate">
+                  {user.primaryEmailAddress?.emailAddress || 'No email address connected'}
                 </div>
-              )}
-              <span className="absolute bottom-0 right-0 font-mono text-[0.55rem] text-void px-1 bg-cyan font-bold">
-                ACTIVE
-              </span>
-            </div>
-
-            <div className="text-center md:text-left flex-1">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                <span className="inline-block w-1 h-1 bg-cyan animate-pulse" />
-                <span className="data-label text-cyan">CLEARANCE LEVEL // UNRESTRICTED</span>
-              </div>
-              <h1 className="font-display text-4xl md:text-5xl text-white tracking-tight leading-none mb-2">
-                {user.fullName || user.username || 'ASTRONAUT_X'}
-              </h1>
-              <div className="font-mono text-xs text-silver/60">
-                LINKED ADDRESS: {user.primaryEmailAddress?.emailAddress}
               </div>
             </div>
 
-            <div className="border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-8 text-center md:text-right font-mono text-[0.65rem] text-silver/40">
-              <div>SYS_NODE: PRIMARY</div>
-              <div>ENCRYPTION: RSA-4096</div>
-              <div className="text-white/20 pt-1">ID: {user.id.slice(0, 16)}...</div>
+            <div className="divider-line my-8" />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <AccountFact label="Account created" value={createdAt} />
+              <AccountFact label="Saved launches" value={`${bookmarksData?.bookmarks.length || 0}`} />
+              <AccountFact label="Active alerts" value={`${alertsData?.alerts.length || 0}`} />
             </div>
           </ReticleCard>
         </motion.div>
 
-        {/* Global Operational Metrics Array */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {[
-            { label: 'SAVED ARCHIVE BOOKMARKS', value: '0 LOGGED' },
-            { label: 'ACTIVE COUNTDOWN ALERTS', value: '0 TRIGGERS' },
-            { label: 'COMMISSIONED PROTOCOL', value: new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase() },
-          ].map(({ label, value }) => (
-            <ReticleCard key={label} className="p-6 bg-surface text-center flex flex-col justify-between">
-              <span className="data-label text-[0.55rem] text-silver/40 mb-2">{label}</span>
-              <span className="font-mono text-lg font-bold text-white tracking-tight">{value}</span>
-            </ReticleCard>
+        <ProfileSection
+          title="SAVED MISSIONS"
+          eyebrow="DATABASE BOOKMARKS"
+          loading={bookmarksLoading || !accountSynced}
+          emptyTitle="No saved missions yet"
+          emptyBody="Use Save Mission on the launch manifest to keep upcoming missions here."
+        >
+          {bookmarksData?.bookmarks.map((bookmark) => (
+            <RegistryRow
+              key={bookmark.id}
+              title={readMeta(bookmark.metadata, 'title') || bookmark.referenceId}
+              subtitle={[
+                bookmark.type.toUpperCase(),
+                readMeta(bookmark.metadata, 'provider'),
+                formatDate(readMeta(bookmark.metadata, 'net')),
+              ].filter(Boolean).join(' // ')}
+              actionLabel={deleteBookmark.isPending && deleteBookmark.variables === bookmark.id ? 'REMOVING...' : 'REMOVE'}
+              onAction={() => deleteBookmark.mutate(bookmark.id)}
+            />
           ))}
-        </div>
+        </ProfileSection>
 
-        {/* Mission Bookmarks Archive Canvas */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-            <h2 className="font-display text-2xl text-white tracking-tight">INDEXED TELEMETRY BOOKMARKS</h2>
-            <span className="font-mono text-[0.65rem] text-silver/50">LOCAL REGISTRY</span>
-          </div>
-
-          <ReticleCard className="p-12 bg-void/50 border-white/5 text-center">
-            <span className="font-mono text-xs text-silver/40 block mb-2">[ ARCHIVE EMPTY ]</span>
-            <p className="font-mono text-xs text-silver/60 max-w-md mx-auto leading-relaxed">
-              Navigate to satellite modules, dynamic image sets, or global news releases to tag and securely pin persistent operational items.
-            </p>
-          </ReticleCard>
-        </section>
-
-        {/* Alert Schedulers Sub-array */}
-        <section className="mb-24">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-            <h2 className="font-display text-2xl text-white tracking-tight">ACTIVE MISSION CRITICAL ALERTS</h2>
-            <span className="font-mono text-[0.65rem] text-amber">EVENT HOOKS</span>
-          </div>
-
-          <ReticleCard className="p-12 bg-surface/20 border-amber/10 text-center">
-            <span className="font-mono text-xs text-amber/60 block mb-2">[ NO HOOKS CONFIGURED ]</span>
-            <p className="font-mono text-xs text-silver/60 max-w-md mx-auto leading-relaxed">
-              Engage upcoming orbital launches or LEO transit calculations to configure auto-executing background alert schedules.
-            </p>
-          </ReticleCard>
-        </section>
+        <ProfileSection
+          title="LAUNCH ALERTS"
+          eyebrow="ACTIVE TRIGGERS"
+          loading={alertsLoading || !accountSynced}
+          emptyTitle="No launch alerts set"
+          emptyBody="Use Set Alert on an upcoming launch to track it from your profile."
+        >
+          {alertsData?.alerts.map((alert) => (
+            <RegistryRow
+              key={alert.id}
+              title={readMeta(alert.config, 'title') || readMeta(alert.config, 'referenceId') || 'Launch alert'}
+              subtitle={[
+                alert.alertType.toUpperCase().replace('_', ' '),
+                readMeta(alert.config, 'provider'),
+                formatDate(readMeta(alert.config, 'net')),
+              ].filter(Boolean).join(' // ')}
+              actionLabel={deleteAlert.isPending && deleteAlert.variables === alert.id ? 'DISABLING...' : 'DISABLE'}
+              onAction={() => deleteAlert.mutate(alert.id)}
+            />
+          ))}
+        </ProfileSection>
       </div>
+    </ProfileShell>
+  );
+}
+
+function ProfileShell({ children, center = false }: { children: React.ReactNode; center?: boolean }) {
+  return (
+    <div
+      style={{
+        paddingTop: '80px',
+        minHeight: '100vh',
+        background: 'var(--color-void)',
+        display: center ? 'flex' : 'block',
+        alignItems: center ? 'center' : undefined,
+        justifyContent: center ? 'center' : undefined,
+      }}
+      className="select-none"
+    >
+      {children}
     </div>
   );
 }
 
-function ReticleCard({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any }) {
+function AccountFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`relative border border-white/10 rounded-none ${className}`} {...props}>
-      <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan pointer-events-none" />
-      <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan pointer-events-none" />
-      {children}
+    <div className="border border-white/10 bg-white/[0.03] p-4">
+      <span className="data-label text-[0.55rem] text-silver/45 block mb-2">{label}</span>
+      <span className="font-mono text-sm font-bold text-white">{value}</span>
     </div>
   );
+}
+
+function ProfileSection({
+  title,
+  eyebrow,
+  loading,
+  emptyTitle,
+  emptyBody,
+  children,
+}: {
+  title: string;
+  eyebrow: string;
+  loading: boolean;
+  emptyTitle: string;
+  emptyBody: string;
+  children?: React.ReactNode;
+}) {
+  const hasChildren = Boolean(children && (!Array.isArray(children) || children.length > 0));
+
+  return (
+    <section className="mt-10">
+      <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
+        <h2 className="font-display text-2xl text-white tracking-tight">{title}</h2>
+        <span className="font-mono text-[0.65rem] text-silver/50">{eyebrow}</span>
+      </div>
+
+      {loading ? (
+        <ReticleCard className="bg-surface/40 p-8 text-center">
+          <span className="font-mono text-xs text-silver/45">SYNCING ACCOUNT REGISTRY...</span>
+        </ReticleCard>
+      ) : hasChildren ? (
+        <div className="space-y-3">{children}</div>
+      ) : (
+        <ReticleCard className="bg-surface/40 p-8 text-center">
+          <span className="font-mono text-xs text-silver/45 block mb-2">{emptyTitle}</span>
+          <p className="font-mono text-xs text-silver/60 max-w-md mx-auto leading-relaxed">{emptyBody}</p>
+        </ReticleCard>
+      )}
+    </section>
+  );
+}
+
+function RegistryRow({
+  title,
+  subtitle,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  subtitle: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <ReticleCard className="bg-surface p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="font-display text-xl text-white tracking-tight truncate">{title}</h3>
+          <div className="font-mono text-[0.65rem] text-silver/55 mt-1">{subtitle || 'Saved item'}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onAction}
+          className="shrink-0 border border-red/30 px-3 py-2 font-mono text-[0.6rem] font-bold tracking-widest text-red transition-colors hover:bg-red hover:text-void"
+        >
+          {actionLabel}
+        </button>
+      </div>
+    </ReticleCard>
+  );
+}
+
+function readMeta(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function formatDate(value: string) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
 }

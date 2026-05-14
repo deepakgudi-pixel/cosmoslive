@@ -7,6 +7,7 @@
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:codespaces": "bash scripts/codespaces-dev.sh",
     "install:all": "cd frontend && npm install && cd ../backend && npm install",
     "build:frontend": "cd frontend && npm run build",
     "prisma:generate": "cd backend && npx prisma generate",

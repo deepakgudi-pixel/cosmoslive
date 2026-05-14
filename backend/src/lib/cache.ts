@@ -1,0 +1,60 @@
+import { Redis } from '@upstash/redis';
+
+interface CacheStore {
+  get(key: string): Promise<any>;
+  set(key: string, value: any, opts?: { ex: number }): Promise<any>;
+  del(key: string): Promise<number>;
+}
+
+let redis: Redis | CacheStore;
+
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+} else {
+  const store = new Map<string, { value: any; expiry: number }>();
+  redis = {
+    get: async (key: string) => {
+      const entry = store.get(key);
+      if (!entry) return null;
+      if (entry.expiry > 0 && Date.now() > entry.expiry) {
+        store.delete(key);
+        return null;
+      }
+      return entry.value;
+    },
+    set: async (key: string, value: any, opts?: { ex: number }) => {
+      store.set(key, { value, expiry: opts?.ex ? Date.now() + opts.ex * 1000 : 0 });
+      return 'OK';
+    },
+    del: async (key: string) => { store.delete(key); return 1; },
+  };
+  console.warn('Upstash Redis not configured — using in-memory cache fallback');
+}
+
+export async function getCache(key: string): Promise<any | null> {
+  try {
+    return await redis.get(key);
+  } catch (err) {
+    console.error('[Cache GET error]', key, (err as Error).message);
+    return null;
+  }
+}
+
+export async function setCache(key: string, value: any, ttlSeconds: number): Promise<void> {
+  try {
+    await redis.set(key, value, { ex: ttlSeconds });
+  } catch (err) {
+    console.error('[Cache SET error]', key, (err as Error).message);
+  }
+}
+
+export async function delCache(key: string): Promise<void> {
+  try {
+    await redis.del(key);
+  } catch (err) {
+    console.error('[Cache DEL error]', key, (err as Error).message);
+  }
+}

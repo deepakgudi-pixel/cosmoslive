@@ -1,68 +1,60 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 
 export function CustomCursor() {
-  const [pos, setPos] = useState({ x: -100, y: -100 });
-  const [ringPos, setRingPos] = useState({ x: -100, y: -100 });
-  const [visible, setVisible] = useState(true);
-  const pathname = usePathname();
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const mouseRef = useRef({ x: -100, y: -100 });
+  const ringPosRef = useRef({ x: -100, y: -100 });
+  const rafRef = useRef<number>(0);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    let mouseX = -100, mouseY = -100;
-    let ringX = -100, ringY = -100;
-    let animFrame: number;
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+
+    const dot = dotRef.current;
+    const ring = ringRef.current;
+    if (!dot || !ring) return;
 
     const onMouseMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      setPos({ x: mouseX, y: mouseY });
-      if (!visible) setVisible(true);
+      mouseRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    // Ensure initial ring position tracks smoothly without jumping
-    const animateRing = () => {
-      ringX += (mouseX - ringX) * 0.15;
-      ringY += (mouseY - ringY) * 0.15;
-      setRingPos({ x: ringX, y: ringY });
-      animFrame = requestAnimationFrame(animateRing);
+    const animate = () => {
+      const { x: mx, y: my } = mouseRef.current;
+      const rp = ringPosRef.current;
+      rp.x += (mx - rp.x) * 0.15;
+      rp.y += (my - rp.y) * 0.15;
+
+      dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+      ring.style.transform = `translate(${rp.x}px, ${rp.y}px) translate(-50%, -50%)`;
+
+      rafRef.current = requestAnimationFrame(animate);
     };
 
     window.addEventListener('mousemove', onMouseMove, { passive: true });
-    animFrame = requestAnimationFrame(animateRing);
+    rafRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
-      cancelAnimationFrame(animFrame);
+      cancelAnimationFrame(rafRef.current);
     };
-  }, [visible]);
+  }, []);
 
-  // Keep rendering persistently above all WebGL/Canvas elements
   return (
-    <div style={{ pointerEvents: 'none', zIndex: 999999, position: 'fixed', inset: 0 }}>
+    <>
       <div
+        ref={dotRef}
         className="cursor-dot"
-        style={{ 
-          left: pos.x, 
-          top: pos.y, 
-          opacity: pos.x === -100 ? 0 : 1,
-          position: 'fixed',
-          pointerEvents: 'none',
-          zIndex: 999999,
-        }}
+        style={{ position: 'fixed', top: 0, left: 0, pointerEvents: 'none', zIndex: 999999 }}
       />
       <div
+        ref={ringRef}
         className="cursor-ring"
-        style={{ 
-          left: ringPos.x, 
-          top: ringPos.y, 
-          opacity: ringPos.x === -100 ? 0 : 1,
-          position: 'fixed',
-          pointerEvents: 'none',
-          zIndex: 999998,
-        }}
+        style={{ position: 'fixed', top: 0, left: 0, pointerEvents: 'none', zIndex: 999998 }}
       />
-    </div>
+    </>
   );
 }

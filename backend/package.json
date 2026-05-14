@@ -2,12 +2,16 @@
   "name": "cosmoslive-backend",
   "version": "1.0.0",
   "description": "CosmosLive API Gateway — Node.js + Express",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push"
+    "prisma:push": "prisma db push",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
   },
   "keywords": [],
   "author": "Deep",
@@ -25,9 +29,19 @@
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
-    "prisma": "^7.8.0"
+    "prisma": "^7.8.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "nodemon": "^3.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.6"
   }
 }

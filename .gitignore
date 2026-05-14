@@ -20,4 +20,6 @@
 **/.DS_Store
 **/.idea
 **/.vscode
+!/.vscode/
+!/.vscode/tasks.json
 **/.gemini

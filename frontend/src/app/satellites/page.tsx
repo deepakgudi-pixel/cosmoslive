@@ -1,14 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { satelliteApi, issApi } from '@/lib/api';
-import type { StarlinkSatellite } from '@/lib/api';
+import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import { satelliteApi } from '@/lib/api';
 import { Globe } from '@/components/globe/Globe';
+import { ReticleCard } from '@/components/ui';
 
 export default function SatellitesPage() {
-  const [selected, setSelected] = useState<StarlinkSatellite | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [timeStr, setTimeStr] = useState('');
 
@@ -21,213 +21,282 @@ export default function SatellitesPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: satData, isLoading } = useQuery({
+  const { data: satData, isLoading, isError } = useQuery({
     queryKey: ['starlink'],
     queryFn: satelliteApi.getStarlink,
     refetchInterval: 30000,
     staleTime: 25000,
   });
 
-  const { data: issPos } = useQuery({
-    queryKey: ['iss-position'],
-    queryFn: issApi.getPosition,
-    refetchInterval: 10000,
-  });
+  const satellites = useMemo(() => satData?.satellites ?? [], [satData]);
+  const selected = selectedId ? satellites.find((sat) => sat.id === selectedId) ?? null : null;
+  const globeSatellites = selected ? [selected] : [];
 
-  const satellites = satData?.satellites ?? [];
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return satellites;
+    return satellites.filter((sat) => sat.name.toLowerCase().includes(query) || sat.id.includes(query));
+  }, [satellites, search]);
 
-  const filtered = satellites.filter(
-    (s) =>
-      !search ||
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.id.includes(search)
-  );
+  const stats = useMemo(() => {
+    const withHeight = satellites.filter((sat) => sat.height != null);
+    const withVelocity = satellites.filter((sat) => sat.velocity != null);
+    const avgAlt = withHeight.length
+      ? withHeight.reduce((total, sat) => total + sat.height!, 0) / withHeight.length
+      : 0;
+    const avgVel = withVelocity.length
+      ? withVelocity.reduce((total, sat) => total + sat.velocity!, 0) / withVelocity.length
+      : 0;
+    const minAlt = withHeight.length ? Math.min(...withHeight.map((sat) => sat.height!)) : 0;
+    const maxAlt = withHeight.length ? Math.max(...withHeight.map((sat) => sat.height!)) : 0;
+
+    return {
+      total: satellites.length,
+      avgAlt,
+      avgVel,
+      minAlt,
+      maxAlt,
+    };
+  }, [satellites]);
+
+  const altitudeBins = useMemo(() => {
+    const steps = [300, 350, 400, 450, 500, 550, 600];
+    return steps.map((lo, index) => {
+      const hi = steps[index + 1] ?? Infinity;
+      return {
+        label: `${lo}${Number.isFinite(hi) ? `-${hi}` : '+'}`,
+        count: satellites.filter((sat) => sat.height != null && sat.height >= lo && sat.height < hi).length,
+      };
+    });
+  }, [satellites]);
+
+  const maxBinCount = Math.max(...altitudeBins.map((bin) => bin.count), 1);
+
+  const telemetryLog = useMemo(() => {
+    if (selected) {
+      return [
+        selected,
+        ...satellites.filter((sat) => sat.id !== selected.id).slice(0, 5),
+      ];
+    }
+    return filtered.slice(0, 6);
+  }, [filtered, satellites, selected]);
+
+  const statusText = isError ? 'OFFLINE' : isLoading ? 'SYNCING' : 'NOMINAL';
 
   return (
     <div style={{ paddingTop: '70px', minHeight: '100vh', background: 'var(--color-void)' }} className="select-none">
-
-      {/* ── FULL-SCREEN VIEWPORT GLOBE ──────────────────────── */}
-      <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 70px)', overflow: 'hidden' }}>
-
-        {/* Framing Guides */}
-        <div className="absolute inset-x-8 inset-y-6 pointer-events-none z-1 border-x border-white/5 hidden lg:block" />
-
-        {/* Render 3D Earth Constellation layer */}
+      <section style={{ position: 'relative', width: '100%', height: 'calc(100vh - 70px)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
           <Globe
-            satellites={satellites}
-            issPosition={issPos ?? null}
-            onSatelliteClick={setSelected}
+            satellites={globeSatellites}
+            issPosition={null}
+            onSatelliteClick={(sat) => setSelectedId(sat.id)}
             height={typeof window !== 'undefined' ? window.innerHeight - 70 : 800}
           />
         </div>
 
-        {/* Ambient Dark Mask */}
-        <div className="absolute inset-0 pointer-events-none z-1 bg-gradient-to-b from-void/60 via-transparent to-void/80" />
+        <div className="absolute inset-0 pointer-events-none z-1 bg-gradient-to-b from-void/50 via-transparent to-void/80" />
+        <div className="satellite-hud-overlay">
+          <div className="satellite-hud-frame">
+            <span className="satellite-hud-corner satellite-hud-corner-tl" />
+            <span className="satellite-hud-corner satellite-hud-corner-tr" />
+            <span className="satellite-hud-corner satellite-hud-corner-bl" />
+            <span className="satellite-hud-corner satellite-hud-corner-br" />
+          </div>
+        </div>
 
-        {/* ── TOP LEFT HUD CONSOLE ─────────────────── */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          style={{ position: 'absolute', top: '2rem', left: '2.5rem', zIndex: 10 }}
+          className="absolute left-4 top-4 z-10 w-[min(320px,calc(100vw-2rem))] md:left-8 md:top-8"
         >
-          <ReticleCard className="p-6 bg-void/85 backdrop-blur-xl border-white/10 w-[280px]">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-block w-1.5 h-1.5 bg-cyan animate-pulse" />
+          <ReticleCard className="bg-void/80 backdrop-blur-xl border-white/10 p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${isError ? 'bg-red' : 'bg-cyan'} animate-pulse`} />
               <span className="font-mono text-[0.6rem] text-cyan tracking-widest">CONSTELLATION STATUS</span>
             </div>
-            
-            <h2 className="font-display text-4xl text-white tracking-tight leading-none mb-4">
+
+            <h1 className="font-display text-4xl text-white tracking-tight leading-none">
               STARLINK<span className="text-silver/40 block text-lg">LEO ARRAY</span>
-            </h2>
-            
-            <div className="divider-line mb-4" />
-            
-            <div className="space-y-3">
-              <TelemetryMetric label="ACTIVE NODES" value={isLoading ? 'AWAITING...' : `${satData?.count ?? 0}`} />
-              <TelemetryMetric label="ISS LINK" value={issPos ? `${issPos.lat.toFixed(2)}°N` : 'SEARCHING'} live />
-              <TelemetryMetric label="TIMECODE" value={timeStr.split(' ')[1] || '—'} />
-              <TelemetryMetric label="UPDATE CYCLE" value="30 SEC" />
+            </h1>
+
+            <div className="divider-line my-4" />
+
+            <div className="grid grid-cols-2 gap-3">
+              <TelemetryMetric label="STATE" value={statusText} live={!isError} />
+              <TelemetryMetric label="NODES" value={isLoading ? '...' : stats.total.toLocaleString()} />
+              <TelemetryMetric label="LOCK" value={selected ? selected.name : 'STANDBY'} live={Boolean(selected)} />
+              <TelemetryMetric label="CYCLE" value="30 SEC" />
             </div>
           </ReticleCard>
         </motion.div>
 
-        {/* ── BOTTOM LEFT HUD LEGEND ─────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          style={{ position: 'absolute', bottom: '2rem', left: '2.5rem', zIndex: 10 }}
-        >
-          <ReticleCard className="py-3 px-5 bg-void/85 backdrop-blur-xl flex items-center gap-6 border-white/10">
-            <LegendDot color="#00e5ff" label="STARLINK ORBIT" />
-            <LegendDot color="#ff6a00" label="STATION (ISS)" />
-          </ReticleCard>
-        </motion.div>
-
-        {/* ── TOP RIGHT TARGET DIRECTORY SEARCH ──────────────────── */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          style={{ position: 'absolute', top: '2rem', right: '2.5rem', zIndex: 10, width: '300px' }}
+          className="absolute bottom-4 right-4 top-4 z-10 w-[min(360px,calc(100vw-2rem))] md:bottom-8 md:right-8 md:top-8"
         >
-          <ReticleCard className="p-4 bg-void/85 backdrop-blur-xl border-white/10 flex flex-col max-h-[calc(100vh-140px)]">
-            <div className="relative mb-3">
+          <ReticleCard className="flex h-full flex-col overflow-hidden bg-void/82 backdrop-blur-xl border-white/10">
+            <div className="border-b border-white/10 p-4">
+              <div className="mb-3 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <span className="data-label text-[0.55rem] text-cyan">TARGET DIRECTORY</span>
+                  <h2 className="mt-1 truncate font-display text-2xl text-white tracking-tight leading-none">
+                    {selected ? selected.name : 'SELECT NODE'}
+                  </h2>
+                </div>
+                {selected && (
+                  <button onClick={() => setSelectedId(null)} className="shrink-0 p-1 font-mono text-xs text-silver/50 hover:text-white">X</button>
+                )}
+              </div>
+
               <input
                 type="text"
                 placeholder="SEARCH DESIGNATOR..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(event) => setSearch(event.target.value)}
                 className="w-full bg-white/5 border border-white/10 px-3 py-2 text-xs font-mono text-white placeholder-silver/40 focus:outline-none focus:border-cyan transition-colors uppercase rounded-none"
               />
-              {search && (
-                <button onClick={() => setSearch('')} className="absolute right-2 top-2 text-silver/60 hover:text-white font-mono text-xs">✕</button>
+            </div>
+
+            <div className="border-b border-white/10 p-4 bg-cyan/5">
+              {selected ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <TelemetryMetric label="LAT" value={`${selected.lat.toFixed(3)}°`} />
+                  <TelemetryMetric label="LNG" value={`${selected.lng.toFixed(3)}°`} />
+                  <TelemetryMetric label="ALT" value={selected.height ? `${selected.height.toFixed(0)} KM` : 'NOMINAL'} />
+                  <TelemetryMetric label="VEL" value={selected.velocity ? `${selected.velocity.toFixed(2)} KM/S` : 'STABLE'} />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <TelemetryMetric label="LOCK" value="STANDBY" />
+                  <TelemetryMetric label="DISPLAY" value="CLEAR" />
+                </div>
               )}
             </div>
 
-            <span className="data-label text-[0.55rem] mb-2 text-silver/50">NODE INDEX ({filtered.length})</span>
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="data-label text-[0.55rem] text-silver/50">NODE INDEX</span>
+              <span className="font-mono text-[0.6rem] text-silver/40">{filtered.length}</span>
+            </div>
 
-            <div className="overflow-y-auto flex-1 space-y-1 pr-1 custom-scrollbar">
+            <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 pb-3">
               {filtered.slice(0, 100).map((sat) => {
-                const isSelected = selected?.id === sat.id;
+                const isSelected = selectedId === sat.id;
                 return (
                   <button
                     key={sat.id}
-                    onClick={() => setSelected(sat)}
-                    className={`w-full text-left font-mono text-xs py-2 px-3 transition-all flex items-center justify-between ${
-                      isSelected 
-                        ? 'bg-cyan/10 border-l-2 border-cyan text-white font-bold' 
+                    onClick={() => setSelectedId(sat.id)}
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left font-mono text-xs transition-all ${
+                      isSelected
+                        ? 'bg-cyan/10 border-l-2 border-cyan text-white font-bold'
                         : 'hover:bg-white/5 text-silver/80 border-l-2 border-transparent'
                     }`}
                   >
                     <span className="truncate pr-2">{sat.name}</span>
-                    <span className="text-[0.6rem] text-silver/40 shrink-0">LEO</span>
+                    <span className={`shrink-0 text-[0.6rem] ${isSelected ? 'text-cyan' : 'text-silver/40'}`}>
+                      {isSelected ? 'LOCK' : 'LEO'}
+                    </span>
                   </button>
                 );
               })}
-              {filtered.length > 100 && (
-                <div className="text-[0.6rem] font-mono text-silver/40 text-center pt-2 border-t border-white/5 mt-2">
-                  +{filtered.length - 100} TARGETS INDEXED
-                </div>
-              )}
             </div>
           </ReticleCard>
         </motion.div>
 
-        {/* ── SELECTED TARGET TELEMETRY OVERLAY PANEL ─────── */}
-        <AnimatePresence>
-          {selected && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              style={{ position: 'absolute', bottom: '2rem', right: '2.5rem', zIndex: 20, width: '300px' }}
-            >
-              <ReticleCard className="p-6 bg-void/95 backdrop-blur-2xl border-cyan/40 shadow-2xl">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <span className="data-label text-[0.55rem] text-cyan">LOCKED TARGET</span>
-                    <h3 className="font-display text-2xl text-white leading-tight tracking-tight mt-0.5">{selected.name}</h3>
-                  </div>
-                  <button onClick={() => setSelected(null)} className="text-silver/50 hover:text-white font-mono text-xs p-1">✕</button>
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute bottom-4 left-4 right-4 z-10 md:left-8 md:right-[408px] md:bottom-8"
+        >
+          <ReticleCard className="bg-void/78 backdrop-blur-xl border-white/10 p-4">
+            <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-3">
+              <h2 className="font-display text-2xl text-white tracking-tight leading-none">CONSTELLATION METRICS</h2>
+              <span className="font-mono text-[0.6rem] text-silver/45">{timeStr.split(' ')[1] || '--:--:--'} UTC</span>
+            </div>
 
-                <div className="divider-cyan mb-4" />
+            <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr_1.45fr]">
+              <div className="grid grid-cols-2 gap-3">
+                <MetricTile label="ACTIVE" value={stats.total.toLocaleString()} unit="NODES" />
+                <MetricTile label="AVG ALT" value={stats.avgAlt.toFixed(0)} unit="KM" />
+                <MetricTile label="AVG VEL" value={stats.avgVel.toFixed(2)} unit="KM/S" />
+                <MetricTile label="ALT RANGE" value={`${stats.minAlt.toFixed(0)}-${stats.maxAlt.toFixed(0)}`} unit="KM" />
+              </div>
 
-                <div className="space-y-2.5">
-                  <TelemetryMetric label="LATITUDE" value={`${selected.lat.toFixed(4)}°`} />
-                  <TelemetryMetric label="LONGITUDE" value={`${selected.lng.toFixed(4)}°`} />
-                  <TelemetryMetric label="ORBITAL ALT" value={selected.height ? `${selected.height.toFixed(1)} KM` : 'NOMINAL'} />
-                  <TelemetryMetric label="VELOCITY" value={selected.velocity ? `${selected.velocity.toFixed(2)} KM/S` : 'STABLE'} />
+              <div className="min-w-0">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="data-label text-[0.55rem] text-silver/50">ALTITUDE DISTRIBUTION</span>
+                  <span className="font-mono text-[0.55rem] text-silver/35">KM SHELLS</span>
                 </div>
+                <div className="space-y-1.5">
+                  {altitudeBins.map((bin) => (
+                    <div key={bin.label} className="grid grid-cols-[52px_1fr_38px] items-center gap-2">
+                      <span className="font-mono text-[0.55rem] text-silver/45">{bin.label}</span>
+                      <div className="h-2 overflow-hidden bg-white/5">
+                        <div
+                          className="h-full bg-cyan/55 transition-all duration-500"
+                          style={{ width: `${(bin.count / maxBinCount) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-right font-mono text-[0.55rem] text-cyan/80">{bin.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-                <div className="mt-4 pt-3 border-t border-white/5 font-mono text-[0.55rem] text-silver/40 tracking-wider truncate">
-                  SYS_ID: {selected.id}
+              <div className="hidden min-w-0 lg:block">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="data-label text-[0.55rem] text-silver/50">NODE TELEMETRY LOG</span>
+                  <span className="font-mono text-[0.55rem] text-silver/35">LIVE INDEX</span>
                 </div>
-              </ReticleCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                <div className="space-y-1">
+                  {telemetryLog.map((sat) => (
+                    <button
+                      key={sat.id}
+                      onClick={() => setSelectedId(sat.id)}
+                      className={`grid w-full grid-cols-[1fr_70px_70px] gap-2 border-b border-white/5 py-1.5 text-left font-mono text-[0.62rem] transition-colors ${
+                        selectedId === sat.id ? 'text-cyan' : 'text-silver/70 hover:text-white'
+                      }`}
+                    >
+                      <span className="truncate font-bold">{sat.name}</span>
+                      <span>{sat.height?.toFixed(0) ?? '--'} KM</span>
+                      <span>{sat.velocity?.toFixed(2) ?? '--'} KM/S</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ReticleCard>
+        </motion.div>
+      </section>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SUB-COMPONENTS
-   ═══════════════════════════════════════════════════════════ */
 function TelemetryMetric({ label, value, live }: { label: string; value: string; live?: boolean }) {
   return (
-    <div className="flex items-center justify-between font-mono text-xs">
-      <span className="text-silver/60 text-[0.65rem]">{label}</span>
-      <div className="flex items-center gap-2">
-        {live && <span className="w-1 h-1 bg-red rounded-full animate-pulse" />}
-        <span className="text-white font-bold tracking-tight">{value}</span>
+    <div className="flex min-w-0 flex-col gap-1 font-mono text-xs">
+      <span className="text-[0.62rem] text-silver/60">{label}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        {live && <span className="h-1 w-1 shrink-0 rounded-full bg-red animate-pulse" />}
+        <span className="truncate text-white font-bold tracking-tight">{value}</span>
       </div>
     </div>
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function MetricTile({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="flex items-center gap-2 font-mono text-[0.65rem] text-silver">
-      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function ReticleCard({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any }) {
-  return (
-    <div className={`relative border border-white/10 rounded-none ${className}`} {...props}>
-      <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan pointer-events-none" />
-      <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan pointer-events-none" />
-      <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan pointer-events-none" />
-      {children}
+    <div className="border border-white/10 bg-white/[0.03] px-3 py-2">
+      <span className="data-label text-[0.5rem] text-silver/45">{label}</span>
+      <div className="mt-1 flex items-end gap-1">
+        <span className="font-display text-2xl text-white leading-none tracking-tight">{value}</span>
+        <span className="pb-0.5 font-mono text-[0.52rem] text-silver/40">{unit}</span>
+      </div>
     </div>
   );
 }

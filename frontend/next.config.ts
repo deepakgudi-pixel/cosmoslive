@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: projectRoot,
+  productionBrowserSourceMaps: false,
+  experimental: {
+    preloadEntriesOnStart: false,
+    serverSourceMaps: false,
+    webpackMemoryOptimizations: true,
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "apod.nasa.gov" },
@@ -15,7 +26,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.flickr.com" },
     ],
   },
-  turbopack: {},
 };
 
 export default nextConfig;

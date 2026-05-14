@@ -24,7 +24,21 @@ function AuthSection() {
           Profile
         </Link>
         <div style={{ border: '1px solid var(--border-thin)', borderRadius: '50%', padding: '2px' }}>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: 'cosmos-clerk-avatar',
+                userButtonPopoverCard: 'cosmos-clerk-popover',
+                userButtonPopoverMain: 'cosmos-clerk-popover-main',
+                userButtonPopoverFooter: 'cosmos-clerk-popover-footer',
+                userPreview: 'cosmos-clerk-preview',
+                userPreviewMainIdentifier: 'cosmos-clerk-preview-name',
+                userPreviewSecondaryIdentifier: 'cosmos-clerk-preview-email',
+                userButtonPopoverActionButton: 'cosmos-clerk-action',
+                userButtonPopoverActionButtonIconBox: 'cosmos-clerk-action-icon',
+              },
+            }}
+          />
         </div>
       </div>
     );
@@ -41,13 +55,21 @@ function AuthSection() {
 
 export function Navigation() {
   const pathname = usePathname();
+  const { isSignedIn } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   return (
@@ -87,6 +109,7 @@ export function Navigation() {
       </Link>
 
       {/* Desktop Links with active reticle indicators */}
+      {isSignedIn && (
       <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }} className="hidden md:flex">
         {NAV_LINKS.map((link) => {
           const isActive = pathname === link.href;
@@ -121,30 +144,33 @@ export function Navigation() {
           );
         })}
       </div>
+      )}
 
       {/* Auth & Mobile Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
         <AuthSection />
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden"
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--border-thin)',
-            color: 'var(--color-white)',
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-          }}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? '✕' : '☰'}
-        </button>
+        {isSignedIn && (
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border-thin)',
+              color: 'var(--color-white)',
+              padding: '8px 12px',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.75rem',
+            }}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? '✕' : '☰'}
+          </button>
+        )}
       </div>
 
       {/* Mobile Menu Overlay */}
-      {mobileOpen && (
+      {isSignedIn && mobileOpen && (
         <div
           style={{
             position: 'fixed',
