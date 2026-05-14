@@ -152,27 +152,6 @@ h1, h2, h3 {
 /* ═══════════════════════════════════════════════════════════
    AEROSPACE GLASS PANELS & RETICLES
    ═══════════════════════════════════════════════════════════ */
-.glass {
-  background: var(--color-surface);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  border: 1px solid var(--border-thin);
-  position: relative;
-}
-
-/* Add technical corner crosshairs to premium cards */
-.corner-reticle {
-  position: relative;
-}
-.corner-reticle::before,
-.corner-reticle::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-}
-
-.reticle-tl { position: absolute; top: -1px; left: -1px; width: 6px; height: 6px; border-top: 1px solid var(--color-cyan); border-left: 1px solid var(--color-cyan); }
-.reticle-tr { position: absolute; top: -1px; right: -1px; width: 6px; height: 6px; border-top: 1px solid var(--color-cyan); border-right: 1px solid var(--color-cyan); }
 .reticle-bl { position: absolute; bottom: -1px; left: -1px; width: 6px; height: 6px; border-bottom: 1px solid var(--color-cyan); border-left: 1px solid var(--color-cyan); }
 .reticle-br { position: absolute; bottom: -1px; right: -1px; width: 6px; height: 6px; border-bottom: 1px solid var(--color-cyan); border-right: 1px solid var(--color-cyan); }
 
@@ -870,6 +849,13 @@ html body [class*="cl-input"] {
   color: var(--color-white) !important;
   caret-color: var(--color-cyan) !important;
   border: 1px solid rgba(0, 229, 255, 0.28) !important;
+  box-shadow: none !important;
+}
+
+html body[data-navigating="true"] .cosmos-auth-input,
+html body[data-navigating="true"] [class*="cl-formFieldInput"],
+html body[data-navigating="true"] [class*="cl-input"] {
+  background: rgba(255, 255, 255, 0.02) !important;
   box-shadow: none !important;
 }
 

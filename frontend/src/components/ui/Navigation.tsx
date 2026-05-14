@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import type { PointerEvent } from 'react';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SignInButton, UserButton, useAuth } from '@clerk/nextjs';
 
 const NAV_LINKS = [
@@ -51,33 +51,23 @@ function AuthSection() {
 
   return (
     <SignInButton mode="modal">
-      <button className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.65rem' }}>
+      <motion.button 
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.95 }}
+        className="btn-primary" 
+        style={{ padding: '8px 20px', fontSize: '0.65rem' }}
+      >
         Sign In
-      </button>
+      </motion.button>
     </SignInButton>
   );
 }
 
 export function Navigation() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { isLoaded, isSignedIn } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const showSignedInNav = isLoaded && Boolean(isSignedIn);
-
-  const navigateTo = (href: string) => {
-    setMobileOpen(false);
-    if (pathname !== href) {
-      router.push(href);
-    }
-  };
-
-  const handleNavPointerDown = (event: PointerEvent<HTMLButtonElement>, href: string) => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    navigateTo(href);
-  };
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -92,96 +82,142 @@ export function Navigation() {
     };
   }, []);
 
+  // Global body attribute for navigation feedback
+  useEffect(() => {
+    if (isNavigating) {
+      document.body.setAttribute('data-navigating', 'true');
+    } else {
+      document.body.removeAttribute('data-navigating');
+    }
+  }, [isNavigating]);
+
+  // Close mobile menu and reset navigation state when pathname changes
+  useEffect(() => {
+    setMobileOpen(false);
+    setIsNavigating(false);
+  }, [pathname]);
+
+  const startNav = (href: string) => {
+    if (pathname !== href) {
+      setIsNavigating(true);
+    }
+  };
+
   return (
-    <nav
-      style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0,
-        zIndex: 100000,
-        pointerEvents: 'auto',
-        isolation: 'isolate',
-        padding: '0 3rem',
-        height: '70px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: scrolled ? 'rgba(0, 0, 0, 0.85)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(30px) saturate(1.2)' : 'none',
-        borderBottom: scrolled ? '1px solid var(--border-thin)' : '1px solid transparent',
-        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-      }}
-    >
-      {/* Premium Minimal Logo */}
-      <Link
-        href="/"
+    <>
+      {/* Top Loading Progress Bar */}
+      <AnimatePresence mode="wait">
+        {isNavigating && (
+          <motion.div
+            key="nav-progress"
+            initial={{ width: '0%', opacity: 0 }}
+            animate={{ width: ['30%', '85%'], opacity: 1 }}
+            exit={{ width: '100%', opacity: 0 }}
+            transition={{ 
+              width: { duration: 2, ease: "easeOut" },
+              opacity: { duration: 0.2 }
+            }}
+            style={{
+              position: 'fixed',
+              top: 0, left: 0,
+              height: '3px',
+              background: 'linear-gradient(90deg, var(--color-cyan), var(--color-white))',
+              zIndex: 200000,
+              boxShadow: '0 0 15px var(--color-cyan)',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <nav
         style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '1.6rem',
-          letterSpacing: '0.04em',
-          color: 'var(--color-white)',
-          textDecoration: 'none',
+          position: 'fixed',
+          top: 0, left: 0, right: 0,
+          zIndex: 100000,
+          pointerEvents: 'auto',
+          isolation: 'isolate',
+          padding: '0 3rem',
+          height: '70px',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          lineHeight: 1,
+          justifyContent: 'space-between',
+          background: scrolled ? 'rgba(0, 0, 0, 0.85)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(30px) saturate(1.2)' : 'none',
+          borderBottom: scrolled ? '1px solid var(--border-thin)' : '1px solid transparent',
+          transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <span style={{ color: 'var(--color-cyan)', fontSize: '0.9rem' }}>◈</span>
-        <span>COSMOS<span style={{ color: 'var(--color-silver)' }}>LIVE</span></span>
-      </Link>
+        {/* Premium Minimal Logo */}
+        <Link
+          href="/"
+          onClick={() => startNav('/')}
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '1.6rem',
+            letterSpacing: '0.04em',
+            color: 'var(--color-white)',
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            lineHeight: 1,
+          }}
+        >
+          <span style={{ color: 'var(--color-cyan)', fontSize: '0.9rem' }}>◈</span>
+          <span>COSMOS<span style={{ color: 'var(--color-silver)' }}>LIVE</span></span>
+        </Link>
 
-      {/* Desktop Links with active reticle indicators */}
-      {showSignedInNav && (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }} className="hidden md:flex">
-        {NAV_LINKS.map((link) => {
-          const isActive = pathname === link.href;
-          return (
-            <button
-              key={link.href}
-              type="button"
-              aria-current={isActive ? 'page' : undefined}
-              onFocus={() => router.prefetch(link.href)}
-              onMouseEnter={() => router.prefetch(link.href)}
-              onPointerDown={(event) => handleNavPointerDown(event, link.href)}
-              onClick={() => navigateTo(link.href)}
-              style={{
-                appearance: 'none',
-                background: 'transparent',
-                border: 0,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.68rem',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: isActive ? 'var(--color-white)' : 'var(--color-silver)',
-                textDecoration: 'none',
-                position: 'relative',
-                padding: '0.5rem 0',
-                transition: 'color 0.3s ease',
-              }}
-            >
-              {link.label}
-              {isActive && (
+        {/* Desktop Links with active indicators */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }} className="hidden md:flex">
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => startNav(link.href)}
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.68rem',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: isActive ? 'var(--color-white)' : 'var(--color-silver)',
+                  textDecoration: 'none',
+                  position: 'relative',
+                  padding: '0.5rem 0',
+                  transition: 'color 0.3s ease',
+                }}
+              >
+                <motion.span
+                  whileTap={{ scale: 0.9, y: 1 }}
+                  style={{ display: 'inline-block' }}
+                >
+                  {link.label}
+                </motion.span>
                 <span 
                   style={{ 
                     position: 'absolute', 
                     bottom: 0, left: 0, right: 0, 
                     height: '1px', 
-                    background: 'var(--color-cyan)' 
+                    background: 'var(--color-cyan)',
+                    transform: isActive ? 'scaleX(1)' : 'scaleX(0)',
+                    transformOrigin: 'left',
+                    transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                   }} 
                 />
-              )}
-            </button>
-          );
-        })}
-      </div>
-      )}
+              </Link>
+            );
+          })}
+        </div>
 
-      {/* Auth & Mobile Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-        <AuthSection />
-        {showSignedInNav && (
-          <button
+        {/* Auth & Mobile Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <AuthSection />
+          <motion.button
+            whileHover={{ scale: 1.05, borderColor: 'var(--color-cyan)' }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden"
             style={{
@@ -192,56 +228,73 @@ export function Navigation() {
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: '0.75rem',
+              transition: 'all 0.3s ease',
             }}
             aria-label="Toggle menu"
           >
             {mobileOpen ? '✕' : '☰'}
-          </button>
-        )}
-      </div>
+          </motion.button>
+        </div>
 
-      {/* Mobile Menu Overlay */}
-      {showSignedInNav && mobileOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '70px', left: 0, right: 0,
-            background: 'rgba(0, 0, 0, 0.98)',
-            backdropFilter: 'blur(30px)',
-            padding: '3rem 2rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2rem',
-            borderBottom: '1px solid var(--border-thin)',
-          }}
-        >
-          {NAV_LINKS.map((link) => (
-            <button
-              key={link.href}
-              type="button"
-              aria-current={pathname === link.href ? 'page' : undefined}
-              onFocus={() => router.prefetch(link.href)}
-              onMouseEnter={() => router.prefetch(link.href)}
-              onPointerDown={(event) => handleNavPointerDown(event, link.href)}
-              onClick={() => navigateTo(link.href)}
+        {/* Mobile Menu Overlay */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: '100%' }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{
-                appearance: 'none',
-                background: 'transparent',
-                border: 0,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontSize: '2rem',
-                letterSpacing: '0.04em',
-                color: pathname === link.href ? 'var(--color-cyan)' : 'var(--color-white)',
-                textDecoration: 'none',
-                textAlign: 'left',
+                position: 'fixed',
+                top: '70px', left: 0, right: 0,
+                height: 'calc(100vh - 70px)',
+                background: 'rgba(0, 0, 0, 0.98)',
+                backdropFilter: 'blur(30px)',
+                padding: '3rem 2rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.5rem',
+                borderBottom: '1px solid var(--border-thin)',
+                overflowY: 'auto',
+                zIndex: 99999,
               }}
             >
-              {link.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </nav>
+              {NAV_LINKS.map((link, idx) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + idx * 0.05 }}
+                >
+                  <Link
+                    href={link.href}
+                    aria-current={pathname === link.href ? 'page' : undefined}
+                    onClick={() => startNav(link.href)}
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '2.5rem',
+                      letterSpacing: '0.04em',
+                      color: pathname === link.href ? 'var(--color-cyan)' : 'var(--color-white)',
+                      textDecoration: 'none',
+                      textAlign: 'left',
+                      display: 'block',
+                      width: '100%',
+                      padding: '0.5rem 0',
+                    }}
+                  >
+                    <motion.span
+                      whileTap={{ x: 10, color: 'var(--color-cyan)' }}
+                      style={{ display: 'block' }}
+                    >
+                      {link.label}
+                    </motion.span>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+    </>
   );
 }
