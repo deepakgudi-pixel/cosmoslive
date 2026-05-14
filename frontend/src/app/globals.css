@@ -1,27 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════════════════════
-   PREMIUM AEROSPACE DESIGN SYSTEM (AURIGA SOTD INSPIRED)
-   ═══════════════════════════════════════════════════════════ */
+/* premium aerospace design system */
 :root {
-  --color-void: #000000;
+  --color-void: hsl(0, 0%, 0%);
   --color-deep: #02050a;
   --color-navy: #050d18;
   --color-surface: rgba(5, 11, 20, 0.65);
   --color-surface-hover: rgba(10, 20, 35, 0.85);
-  
+
   --color-cyan: #00e5ff;
   --color-cyan-glow: rgba(0, 229, 255, 0.4);
   --color-cyan-dim: rgba(0, 229, 255, 0.1);
-  
+
   --color-amber: #ff6a00;
   --color-amber-glow: rgba(255, 106, 0, 0.4);
   --color-amber-dim: rgba(255, 106, 0, 0.1);
-  
+
   --color-silver: #94a3b8;
   --color-white: #ffffff;
-  
+
   --border-thin: rgba(255, 255, 255, 0.08);
   --border-bright: rgba(255, 255, 255, 0.2);
   --border-accent: rgba(0, 229, 255, 0.3);
@@ -31,10 +29,10 @@
   --font-body: 'Inter', sans-serif;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   GLOBAL RESET & SELECTION
-   ═══════════════════════════════════════════════════════════ */
-*, *::before, *::after {
+/* global reset & selection */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -52,7 +50,7 @@ body {
   line-height: 1.5;
   cursor: none;
   overflow-x: hidden;
-  background-image: 
+  background-image:
     radial-gradient(circle at 50% 0%, rgba(0, 40, 80, 0.15), transparent 60%),
     radial-gradient(circle at 100% 50%, rgba(0, 229, 255, 0.05), transparent 50%),
     radial-gradient(circle at 0% 100%, rgba(255, 106, 0, 0.03), transparent 40%);
@@ -64,9 +62,7 @@ body {
   color: var(--color-void);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CINEMATIC CUSTOM CURSOR
-   ═══════════════════════════════════════════════════════════ */
+/* cinematic custom cursor */
 .cursor-dot {
   width: 4px;
   height: 4px;
@@ -100,8 +96,10 @@ body {
 .cursor-ring::after {
   content: '';
   position: absolute;
-  top: 50%; left: 50%;
-  width: 2px; height: 2px;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
   background: rgba(255, 255, 255, 0.4);
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -115,45 +113,62 @@ body:has(a:hover, button:hover, [data-interactive]:hover) .cursor-ring {
   transform: translate(-50%, -50%) scale(1.05);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SCROLLBAR
-   ═══════════════════════════════════════════════════════════ */
+/* scrollbar */
 ::-webkit-scrollbar {
   width: 3px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-void);
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-cyan);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TYPOGRAPHY CLASSES
-   ═══════════════════════════════════════════════════════════ */
-.font-display { 
-  font-family: var(--font-display); 
+/* typography classes */
+.font-display {
+  font-family: var(--font-display);
   text-transform: uppercase;
 }
-.font-mono { 
-  font-family: var(--font-mono); 
+
+.font-mono {
+  font-family: var(--font-mono);
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-display);
   letter-spacing: 0.02em;
   line-height: 0.95;
   font-weight: 400;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   AEROSPACE GLASS PANELS & RETICLES
-   ═══════════════════════════════════════════════════════════ */
-.reticle-bl { position: absolute; bottom: -1px; left: -1px; width: 6px; height: 6px; border-bottom: 1px solid var(--color-cyan); border-left: 1px solid var(--color-cyan); }
-.reticle-br { position: absolute; bottom: -1px; right: -1px; width: 6px; height: 6px; border-bottom: 1px solid var(--color-cyan); border-right: 1px solid var(--color-cyan); }
+/* aerospace glass panels & reticles */
+.reticle-bl {
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 1px solid var(--color-cyan);
+  border-left: 1px solid var(--color-cyan);
+}
+
+.reticle-br {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 1px solid var(--color-cyan);
+  border-right: 1px solid var(--color-cyan);
+}
 
 .glass-amber {
   background: rgba(15, 6, 2, 0.65);
@@ -161,24 +176,26 @@ h1, h2, h3 {
   border: 1px solid rgba(255, 106, 0, 0.15);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   GLOW & SHADOW ACCENTS
-   ═══════════════════════════════════════════════════════════ */
-.glow-cyan { box-shadow: 0 0 30px rgba(0, 229, 255, 0.12); }
-.glow-amber { box-shadow: 0 0 30px rgba(255, 106, 0, 0.12); }
+/* glow & shadow accents */
+.glow-cyan {
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.12);
+}
+
+.glow-amber {
+  box-shadow: 0 0 30px rgba(255, 106, 0, 0.12);
+}
 
 .text-glow-cyan {
   color: var(--color-cyan);
   text-shadow: 0 0 24px rgba(0, 229, 255, 0.5);
 }
+
 .text-glow-amber {
   color: var(--color-amber);
   text-shadow: 0 0 24px rgba(255, 106, 0, 0.5);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TELEMETRY READOUTS
-   ═══════════════════════════════════════════════════════════ */
+/* telemetry readouts */
 .data-label {
   font-family: var(--font-mono);
   font-size: 0.65rem;
@@ -195,6 +212,7 @@ h1, h2, h3 {
   color: var(--color-white);
   letter-spacing: 0.02em;
 }
+
 .data-value-accent {
   color: var(--color-cyan);
 }
@@ -207,9 +225,7 @@ h1, h2, h3 {
   line-height: 0.9;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   STATUS INDICATORS
-   ═══════════════════════════════════════════════════════════ */
+/* status indicators */
 .status-live {
   display: inline-flex;
   align-items: center;
@@ -241,13 +257,20 @@ h1, h2, h3 {
 }
 
 @keyframes pulse-live {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.2; transform: scale(0.6); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.2;
+    transform: scale(0.6);
+  }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TECHNICAL BUTTONS (MAGNETIC TECHNICAL AESTHETIC)
-   ═══════════════════════════════════════════════════════════ */
+/* technical buttons */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -271,7 +294,10 @@ h1, h2, h3 {
 .btn-primary::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: var(--color-white);
   transform: translateY(101%);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -291,9 +317,11 @@ h1, h2, h3 {
   border-color: rgba(0, 229, 255, 0.3);
   color: var(--color-cyan);
 }
+
 .btn-primary.btn-cyan::before {
   background: var(--color-cyan);
 }
+
 .btn-primary.btn-cyan:hover {
   color: var(--color-void);
   border-color: var(--color-cyan);
@@ -303,17 +331,17 @@ h1, h2, h3 {
   border-color: rgba(255, 106, 0, 0.3);
   color: var(--color-amber);
 }
+
 .btn-primary.btn-amber::before {
   background: var(--color-amber);
 }
+
 .btn-primary.btn-amber:hover {
   color: var(--color-void);
   border-color: var(--color-amber);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PREMIUM HOVER CARDS
-   ═══════════════════════════════════════════════════════════ */
+/* premium hover cards */
 .card-hover {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, background-color 0.4s ease;
 }
@@ -324,12 +352,10 @@ h1, h2, h3 {
   background-color: var(--color-surface-hover);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DECORATIVE GRIDS & SCAN LINES
-   ═══════════════════════════════════════════════════════════ */
+/* decorative grids & scan lines */
 .hairline-grid {
   background-size: 80px 80px;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
@@ -337,26 +363,40 @@ h1, h2, h3 {
 .scan-line {
   position: relative;
 }
+
 .scan-line::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   animation: scan-vertical 4s linear infinite;
   pointer-events: none;
 }
 
 @keyframes scan-vertical {
-  0% { transform: translateY(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(400px); opacity: 0; }
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(400px);
+    opacity: 0;
+  }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TAGS & COUNTDOWN
-   ═══════════════════════════════════════════════════════════ */
+/* tags & countdown */
 .tag {
   display: inline-flex;
   align-items: center;
@@ -371,7 +411,8 @@ h1, h2, h3 {
   transition: all 0.3s ease;
 }
 
-.tag:hover, .tag.active {
+.tag:hover,
+.tag.active {
   background: rgba(255, 255, 255, 0.1);
   color: var(--color-white);
   border-color: rgba(255, 255, 255, 0.3);
@@ -401,19 +442,19 @@ h1, h2, h3 {
   display: block;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DIVIDERS
-   ═══════════════════════════════════════════════════════════ */
+/* dividers */
 .divider-cyan {
   height: 1px;
   background: var(--border-thin);
   width: 100%;
   position: relative;
 }
+
 .divider-cyan::after {
   content: '';
   position: absolute;
-  left: 0; top: 0;
+  left: 0;
+  top: 0;
   width: 40px;
   height: 1px;
   background: var(--color-cyan);
@@ -425,9 +466,7 @@ h1, h2, h3 {
   width: 100%;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CLERK AUTH HUD THEME
-   ═══════════════════════════════════════════════════════════ */
+/* clerk auth hud theme */
 .cosmos-clerk-avatar,
 .cl-userButtonAvatarBox {
   width: 32px !important;
@@ -884,9 +923,7 @@ html body [class*="cl-lastAuthenticationStrategyBadge"] {
   font-family: var(--font-mono) !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   HOMEPAGE ORBIT BACKDROP
-   ═══════════════════════════════════════════════════════════ */
+/* homepage orbit backdrop */
 .hero-orbit-backdrop {
   position: absolute;
   inset: 0;
@@ -977,8 +1014,13 @@ html body [class*="cl-lastAuthenticationStrategyBadge"] {
 }
 
 @keyframes heroStarDrift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-120px, 90px, 0); }
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-120px, 90px, 0);
+  }
 }
 
 @keyframes heroSatelliteDrift {
@@ -986,18 +1028,19 @@ html body [class*="cl-lastAuthenticationStrategyBadge"] {
     transform: translate3d(-16px, 10px, 0) scale(0.8);
     opacity: 0;
   }
-  12%, 82% {
+
+  12%,
+  82% {
     opacity: 0.85;
   }
+
   100% {
     transform: translate3d(130px, -76px, 0) scale(1.15);
     opacity: 0;
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SATELLITE HUD SIMULATION
-   ═══════════════════════════════════════════════════════════ */
+/* satellite hud simulation */
 .satellite-hud-overlay {
   position: absolute;
   inset: 0;
@@ -1047,12 +1090,17 @@ html body [class*="cl-lastAuthenticationStrategyBadge"] {
   border-bottom: 1px solid;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   RESPONSIVE BASE
-   ═══════════════════════════════════════════════════════════ */
+/* responsive base */
 @media (max-width: 768px) {
-  body { cursor: auto; }
-  .cursor-dot, .cursor-ring { display: none; }
+  body {
+    cursor: auto;
+  }
+
+  .cursor-dot,
+  .cursor-ring {
+    display: none;
+  }
+
   .satellite-hud-frame {
     opacity: 0.35;
   }
