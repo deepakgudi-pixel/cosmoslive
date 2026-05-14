@@ -2,6 +2,11 @@
   "name": "CosmosLive Codespace",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
   "postCreateCommand": "npm install && npm run install:all && npm run prisma:generate",
   "forwardPorts": [3000, 4000],
   "portsAttributes": {
