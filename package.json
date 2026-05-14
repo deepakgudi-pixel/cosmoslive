@@ -1,0 +1,18 @@
+{
+  "name": "cosmoslive",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CosmosLive — Everything in space. One place. Live.",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "build:frontend": "cd frontend && npm run build",
+    "prisma:generate": "cd backend && npx prisma generate",
+    "prisma:push": "cd backend && npx prisma db push"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

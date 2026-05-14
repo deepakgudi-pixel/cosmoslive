@@ -1,0 +1,23 @@
+# dependencies
+**/node_modules
+**/.pnp
+**/.pnp.*
+**/.yarn/*
+
+# environments
+**/.env
+**/.env.*
+!**/.env.example
+
+# builds & logs
+**/.next
+**/dist
+**/build
+**/out
+**/*.log
+
+# system & IDEs
+**/.DS_Store
+**/.idea
+**/.vscode
+**/.gemini

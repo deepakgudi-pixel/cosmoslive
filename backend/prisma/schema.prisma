@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String     @id @default(uuid())
+  clerkId   String     @unique @map("clerk_id")
+  email     String
+  createdAt DateTime   @default(now()) @map("created_at")
+  bookmarks Bookmark[]
+  alerts    Alert[]
+
+  @@map("users")
+}
+
+model Bookmark {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  type        BookmarkType
+  referenceId String   @map("reference_id")
+  metadata    Json     @default("{}")
+  savedAt     DateTime @default(now()) @map("saved_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bookmarks")
+}
+
+model Alert {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  alertType AlertType @map("alert_type")
+  config    Json      @default("{}")
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+
+enum BookmarkType {
+  image
+  news
+  satellite
+  launch
+  article
+}
+
+enum AlertType {
+  launch
+  satellite_pass
+  iss_pass
+}
