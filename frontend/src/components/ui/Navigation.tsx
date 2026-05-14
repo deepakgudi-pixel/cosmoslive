@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SignInButton, UserButton, useAuth } from '@clerk/nextjs';
 
@@ -15,7 +16,11 @@ const NAV_LINKS = [
 ];
 
 function AuthSection() {
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return <div aria-hidden="true" style={{ width: '90px', height: '34px' }} />;
+  }
 
   if (isSignedIn) {
     return (
@@ -55,9 +60,11 @@ function AuthSection() {
 
 export function Navigation() {
   const pathname = usePathname();
-  const { isSignedIn } = useAuth();
+  const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const showSignedInNav = isLoaded && Boolean(isSignedIn);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -77,7 +84,9 @@ export function Navigation() {
       style={{
         position: 'fixed',
         top: 0, left: 0, right: 0,
-        zIndex: 9000,
+        zIndex: 100000,
+        pointerEvents: 'auto',
+        isolation: 'isolate',
         padding: '0 3rem',
         height: '70px',
         display: 'flex',
@@ -109,7 +118,7 @@ export function Navigation() {
       </Link>
 
       {/* Desktop Links with active reticle indicators */}
-      {isSignedIn && (
+      {showSignedInNav && (
       <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }} className="hidden md:flex">
         {NAV_LINKS.map((link) => {
           const isActive = pathname === link.href;
@@ -117,6 +126,11 @@ export function Navigation() {
             <Link
               key={link.href}
               href={link.href}
+              prefetch
+              aria-current={isActive ? 'page' : undefined}
+              onFocus={() => router.prefetch(link.href)}
+              onMouseEnter={() => router.prefetch(link.href)}
+              onClick={() => setMobileOpen(false)}
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.68rem',
@@ -149,7 +163,7 @@ export function Navigation() {
       {/* Auth & Mobile Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
         <AuthSection />
-        {isSignedIn && (
+        {showSignedInNav && (
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden"
@@ -170,7 +184,7 @@ export function Navigation() {
       </div>
 
       {/* Mobile Menu Overlay */}
-      {isSignedIn && mobileOpen && (
+      {showSignedInNav && mobileOpen && (
         <div
           style={{
             position: 'fixed',
@@ -188,6 +202,10 @@ export function Navigation() {
             <Link
               key={link.href}
               href={link.href}
+              prefetch
+              aria-current={pathname === link.href ? 'page' : undefined}
+              onFocus={() => router.prefetch(link.href)}
+              onMouseEnter={() => router.prefetch(link.href)}
               onClick={() => setMobileOpen(false)}
               style={{
                 fontFamily: 'var(--font-display)',
