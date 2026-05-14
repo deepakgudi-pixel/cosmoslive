@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import type { PointerEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { SignInButton, UserButton, useAuth } from '@clerk/nextjs';
 
@@ -66,6 +66,19 @@ export function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const showSignedInNav = isLoaded && Boolean(isSignedIn);
 
+  const navigateTo = (href: string) => {
+    setMobileOpen(false);
+    if (pathname !== href) {
+      router.push(href);
+    }
+  };
+
+  const handleNavPointerDown = (event: PointerEvent<HTMLButtonElement>, href: string) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    navigateTo(href);
+  };
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -123,15 +136,19 @@ export function Navigation() {
         {NAV_LINKS.map((link) => {
           const isActive = pathname === link.href;
           return (
-            <Link
+            <button
               key={link.href}
-              href={link.href}
-              prefetch
+              type="button"
               aria-current={isActive ? 'page' : undefined}
               onFocus={() => router.prefetch(link.href)}
               onMouseEnter={() => router.prefetch(link.href)}
-              onClick={() => setMobileOpen(false)}
+              onPointerDown={(event) => handleNavPointerDown(event, link.href)}
+              onClick={() => navigateTo(link.href)}
               style={{
+                appearance: 'none',
+                background: 'transparent',
+                border: 0,
+                cursor: 'pointer',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.68rem',
                 letterSpacing: '0.18em',
@@ -154,7 +171,7 @@ export function Navigation() {
                   }} 
                 />
               )}
-            </Link>
+            </button>
           );
         })}
       </div>
@@ -199,24 +216,29 @@ export function Navigation() {
           }}
         >
           {NAV_LINKS.map((link) => (
-            <Link
+            <button
               key={link.href}
-              href={link.href}
-              prefetch
+              type="button"
               aria-current={pathname === link.href ? 'page' : undefined}
               onFocus={() => router.prefetch(link.href)}
               onMouseEnter={() => router.prefetch(link.href)}
-              onClick={() => setMobileOpen(false)}
+              onPointerDown={(event) => handleNavPointerDown(event, link.href)}
+              onClick={() => navigateTo(link.href)}
               style={{
+                appearance: 'none',
+                background: 'transparent',
+                border: 0,
+                cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
                 fontSize: '2rem',
                 letterSpacing: '0.04em',
                 color: pathname === link.href ? 'var(--color-cyan)' : 'var(--color-white)',
                 textDecoration: 'none',
+                textAlign: 'left',
               }}
             >
               {link.label}
-            </Link>
+            </button>
           ))}
         </div>
       )}
