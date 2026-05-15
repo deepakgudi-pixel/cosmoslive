@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { fetchFilteredNews, VALID_NEWS_TAGS } from '../services';
+import { fetchFilteredNews, VALID_NEWS_TAGS } from '../services/index.js';
 
 const router = Router();
 

@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { z } from 'zod';
-import { getCache, setCache } from '../lib/cache';
-import { TTL, APODSchema, NASACollectionSchema, MarsPhotoSchema } from './types';
-import type { APOD } from './types';
+import { getCache, setCache } from '../lib/cache.js';
+import { TTL, APODSchema, NASACollectionSchema, MarsPhotoSchema } from './types.js';
+import type { APOD } from './types.js';
 
 function nasaKey(): string {
   return process.env.NASA_API_KEY || 'DEMO_KEY';

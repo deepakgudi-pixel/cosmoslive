@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { z } from 'zod';
-import { getCache, setCache } from '../lib/cache';
-import { TTL, ISSPositionSchema, ISSCrewResponseSchema, CrewMemberSchema } from './types';
-import type { ISSPosition, CrewMember } from './types';
+import { getCache, setCache } from '../lib/cache.js';
+import { TTL, ISSPositionSchema, ISSCrewResponseSchema, CrewMemberSchema } from './types.js';
+import type { ISSPosition, CrewMember } from './types.js';
 
 const CREW_SOURCES = [
   'https://corquaid.github.io/international-space-station-APIs/JSON/people-in-space.json',

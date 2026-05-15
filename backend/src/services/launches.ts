@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { z } from 'zod';
-import { getCache, setCache } from '../lib/cache';
-import { TTL, LaunchSchema, SpaceXLaunchSchema, SpaceXRocketSchema } from './types';
-import type { Launch, SpaceXLaunch, SpaceXRocket, SpaceXData, LaunchData } from './types';
+import { getCache, setCache } from '../lib/cache.js';
+import { TTL, LaunchSchema, SpaceXLaunchSchema, SpaceXRocketSchema } from './types.js';
+import type { Launch, SpaceXLaunch, SpaceXRocket, SpaceXData, LaunchData } from './types.js';
 
 export async function fetchLaunches(): Promise<LaunchData> {
   const cacheKey = 'launches:all';

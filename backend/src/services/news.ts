@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { z } from 'zod';
-import { getCache, setCache } from '../lib/cache';
-import { TTL, NewsResponseSchema, NewsArticleSchema } from './types';
-import type { NewsArticle } from './types';
+import { getCache, setCache } from '../lib/cache.js';
+import { TTL, NewsResponseSchema, NewsArticleSchema } from './types.js';
+import type { NewsArticle } from './types.js';
 
 export const VALID_NEWS_TAGS = ['SpaceX', 'NASA', 'ISS', 'Mars', 'Moon', 'Launches', 'Webb', 'ESA', 'ISRO'];
 

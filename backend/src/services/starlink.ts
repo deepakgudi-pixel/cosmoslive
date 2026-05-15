@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { z } from 'zod';
-import { getCache, setCache } from '../lib/cache';
-import { TTL, StarlinkPositionSchema } from './types';
-import type { StarlinkPosition } from './types';
+import { getCache, setCache } from '../lib/cache.js';
+import { TTL, StarlinkPositionSchema } from './types.js';
+import type { StarlinkPosition } from './types.js';
 
 const RawStarlinkEntry = z.object({
   id: z.string(),

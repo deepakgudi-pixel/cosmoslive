@@ -2,8 +2,10 @@
   "name": "cosmoslive-backend",
   "version": "1.0.0",
   "description": "CosmosLive API Gateway — Node.js + Express",
+  "type": "module",
   "main": "src/index.ts",
   "scripts": {
+    "postinstall": "prisma generate",
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "prisma:generate": "prisma generate",

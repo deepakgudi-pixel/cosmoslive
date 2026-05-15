@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 
-vi.mock('../lib/cache', () => ({
+vi.mock('../lib/cache.js', () => ({
   getCache: vi.fn().mockResolvedValue(null),
   setCache: vi.fn().mockResolvedValue(undefined),
 }));
@@ -36,7 +36,7 @@ describe('fetchStarlinkPositions', () => {
   it('should fetch and filter starlink positions', async () => {
     (axios.get as any).mockResolvedValue({ data: mockStarlinkData });
 
-    const { fetchStarlinkPositions } = await import('../services/starlink');
+    const { fetchStarlinkPositions } = await import('../services/starlink.js');
     const result = await fetchStarlinkPositions();
 
     expect(result).toHaveLength(1);
@@ -53,7 +53,7 @@ describe('fetchStarlinkPositions', () => {
   it('should reject invalid response data', async () => {
     (axios.get as any).mockResolvedValue({ data: [{ id: 'bad', latitude: 'not-a-number', longitude: null }] });
 
-    const { fetchStarlinkPositions } = await import('../services/starlink');
+    const { fetchStarlinkPositions } = await import('../services/starlink.js');
     await expect(fetchStarlinkPositions()).rejects.toThrow();
   });
 });

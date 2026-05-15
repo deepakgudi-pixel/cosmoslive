@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { fetchISSPosition, fetchISSCrew } from '../services';
+import { fetchISSPosition, fetchISSCrew } from '../services/index.js';
 
 const router = Router();
 

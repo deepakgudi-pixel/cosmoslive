@@ -3,15 +3,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const rawApiTarget =
+  process.env.API_PROXY_TARGET ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000";
+const apiTarget = rawApiTarget.replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: projectRoot,
   productionBrowserSourceMaps: false,
-  experimental: {
-    preloadEntriesOnStart: false,
-    serverSourceMaps: false,
-    webpackMemoryOptimizations: true,
-  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "apod.nasa.gov" },
@@ -27,12 +27,6 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    // When running on the server (rewrites), the backend is always reachable 
-    // at localhost:4000 within the same container/machine.
-    // Using the public URL here can cause issues if the container cannot
-    // resolve its own public domain.
-    const apiTarget = "http://localhost:4000";
-
     return [
       {
         source: "/api/:path*",

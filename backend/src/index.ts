@@ -6,13 +6,14 @@ import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
-import satelliteRoutes from './routes/satellites';
-import launchRoutes from './routes/launches';
-import issRoutes from './routes/iss';
-import mediaRoutes from './routes/media';
-import newsRoutes from './routes/news';
-import userRoutes from './routes/users';
-import { startCronJobs } from './jobs/cron';
+import satelliteRoutes from './routes/satellites.js';
+import launchRoutes from './routes/launches.js';
+import issRoutes from './routes/iss.js';
+import mediaRoutes from './routes/media.js';
+import newsRoutes from './routes/news.js';
+import userRoutes from './routes/users.js';
+import internalRoutes from './routes/internal.js';
+import { startCronJobs } from './jobs/cron.js';
 
 // ── Env validation at startup ─────────────────────────────
 const REQUIRED_VARS = ['DATABASE_URL'];
@@ -82,6 +83,7 @@ app.use('/api/iss', issRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/internal', internalRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -96,7 +98,9 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
-if (process.env.VITEST !== 'true') {
+const isVercelRuntime = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+
+if (process.env.VITEST !== 'true' && !isVercelRuntime) {
   app.listen(PORT, () => {
     console.log(`CosmosLive API running on port ${PORT}`);
     startCronJobs();

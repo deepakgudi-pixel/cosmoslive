@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { fetchStarlinkPositions } from '../services';
+import { fetchStarlinkPositions } from '../services/index.js';
 
 const router = Router();
 

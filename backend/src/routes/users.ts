@@ -1,6 +1,6 @@
 import { AlertType, BookmarkType, Prisma } from '@prisma/client';
 import { Router } from 'express';
-import prisma from '../lib/prisma';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { fetchAPOD, fetchAPODArchive, fetchNASAImages, fetchMarsPhotos } from '../services';
+import { fetchAPOD, fetchAPODArchive, fetchNASAImages, fetchMarsPhotos } from '../services/index.js';
 
 const router = Router();
 

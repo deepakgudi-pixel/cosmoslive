@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { fetchLaunches, fetchSpaceXData } from '../services';
+import { fetchLaunches, fetchSpaceXData } from '../services/index.js';
 
 const router = Router();
 

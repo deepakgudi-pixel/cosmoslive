@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 
-vi.mock('../lib/cache', () => ({
+vi.mock('../lib/cache.js', () => ({
   getCache: vi.fn().mockResolvedValue(null),
   setCache: vi.fn().mockResolvedValue(undefined),
 }));
@@ -24,7 +24,7 @@ describe('fetchISSPosition', () => {
       },
     });
 
-    const { fetchISSPosition } = await import('../services/iss');
+    const { fetchISSPosition } = await import('../services/iss.js');
     const result = await fetchISSPosition();
 
     expect(result).toMatchObject({
@@ -38,7 +38,7 @@ describe('fetchISSPosition', () => {
   it('should reject invalid ISS position', async () => {
     (axios.get as any).mockResolvedValue({ data: { latitude: null, longitude: null, timestamp: 'bad' } });
 
-    const { fetchISSPosition } = await import('../services/iss');
+    const { fetchISSPosition } = await import('../services/iss.js');
     await expect(fetchISSPosition()).rejects.toThrow();
   });
 });
@@ -60,7 +60,7 @@ describe('fetchISSCrew', () => {
         },
       });
 
-    const { fetchISSCrew } = await import('../services/iss');
+    const { fetchISSCrew } = await import('../services/iss.js');
     const result = await fetchISSCrew();
 
     expect(result).toEqual([{ name: 'Test Astronaut', craft: 'ISS' }]);
