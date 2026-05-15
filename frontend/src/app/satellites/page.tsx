@@ -38,10 +38,10 @@ export default function SatellitesPage() {
       };
     }
 
-    const timeoutId = window.setTimeout(enableGlobe, 120);
+    const timeoutId = globalThis.setTimeout(enableGlobe, 120);
     return () => {
       cancelled = true;
-      window.clearTimeout(timeoutId);
+      globalThis.clearTimeout(timeoutId);
     };
   }, []);
 
@@ -130,13 +130,19 @@ export default function SatellitesPage() {
               height={typeof window !== 'undefined' ? window.innerHeight - 70 : 800}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(0,32,64,0.45),rgba(0,0,0,0)_55%)]">
+            <div
+              className="flex h-full w-full items-center justify-center"
+              style={{ background: 'radial-gradient(circle at 50% 45%, rgba(0, 32, 64, 0.45), rgba(0, 0, 0, 0) 55%)' }}
+            >
               <div className="font-mono text-[0.7rem] tracking-[0.22em] text-cyan/70">INITIALISING ORBITAL VIEWPORT</div>
             </div>
           )}
         </div>
 
-        <div className="absolute inset-0 pointer-events-none z-1 bg-gradient-to-b from-void/50 via-transparent to-void/80" />
+        <div
+          className="absolute inset-0 pointer-events-none bg-gradient-to-b from-void/50 via-transparent to-void/80"
+          style={{ zIndex: 1 }}
+        />
         <div className="satellite-hud-overlay">
           <div className="satellite-hud-frame">
             <span className="satellite-hud-corner satellite-hud-corner-tl" />

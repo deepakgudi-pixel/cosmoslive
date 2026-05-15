@@ -40,7 +40,6 @@ export function prefetchRouteData(queryClient: QueryClient, href: string, isSign
       }
       return;
     case '/satellites':
-      void import('../components/globe/GlobeComponent');
       void queryClient.prefetchQuery({
         queryKey: ['starlink'],
         queryFn: satelliteApi.getStarlink,

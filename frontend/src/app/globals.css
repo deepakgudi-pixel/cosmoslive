@@ -341,6 +341,14 @@ h3 {
   border-color: var(--color-amber);
 }
 
+.news-feed-cta::before {
+  background: var(--color-white);
+}
+
+.news-feed-cta:hover {
+  background: var(--color-white);
+}
+
 /* premium hover cards */
 .card-hover {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, background-color 0.4s ease;

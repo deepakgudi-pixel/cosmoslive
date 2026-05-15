@@ -39,7 +39,7 @@ export function NewsSection({ news }: NewsSectionProps) {
           )) ?? <div className="data-label">LOADING INTEL...</div>}
         </div>
         <div style={{ textAlign: 'center', marginTop: '4rem' }}>
-          <Link href="/news" className="btn-primary">ACCESS COMPLETE INTELLIGENCE FEED →</Link>
+          <Link href="/news" className="btn-primary news-feed-cta">ACCESS COMPLETE INTELLIGENCE FEED →</Link>
         </div>
       </motion.section>
     </>
