@@ -2,112 +2,119 @@
 
 > Everything in space. One place. Live.
 
-**CosmosLive** is a real-time multimedia space platform — satellite tracking, launch countdowns, ISS live feed, NASA imagery, and space news in one stunning interface.
+**CosmosLive** is a high-performance, real-time aerospace data platform. It aggregates live telemetry from the ISS, Starlink constellation tracking, global launch countdowns, NASA imagery, and curated space news into a single, immersive interface.
 
 ---
 
-## 🏗️ Stack
+## 🏗️ Technical Stack
 
-| Layer | Tech |
+| Layer | Technology |
 |---|---|
-| Frontend | Next.js 14+ App Router |
-| Styling | Tailwind CSS + Custom CSS |
-| Animations | Framer Motion |
-| State | TanStack Query + Zustand |
-| Backend | Express.js |
-| Auth | Clerk |
-| Cache | Upstash Redis |
-| Database | NeonDB + Prisma |
-| Jobs | node-cron |
-| Deploy | Vercel + Railway |
+| **Frontend** | Next.js 15+ (App Router), React 19 |
+| **Styling** | Vanilla CSS, Tailwind CSS 4, Framer Motion |
+| **State Management** | TanStack Query v5, Zustand |
+| **Backend** | Node.js (ESM), Express.js |
+| **Authentication** | Clerk |
+| **Database** | NeonDB (PostgreSQL) + Prisma ORM |
+| **Cache** | Upstash Redis |
+| **Infrastructure** | Vercel (Frontend + Backend) |
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Install dependencies
+### 1. Pre-requisites
+Ensure you have Node.js 20+ and npm installed.
 
+### 2. Installation
+Clone the repository and install dependencies for both frontend and backend:
 ```bash
 npm run install:all
 ```
 
-### 2. Configure environment variables
+### 3. Environment Configuration
+Create environment files in their respective directories:
 
-**Backend:**
-```bash
-cp backend/.env.example backend/.env
-# Fill in: NASA_API_KEY, N2YO_API_KEY, UPSTASH_REDIS_*, DATABASE_URL
+**Backend (`backend/.env`):**
+```env
+PORT=4000
+DATABASE_URL="your_neon_db_url"
+UPSTASH_REDIS_REST_URL="your_upstash_url"
+UPSTASH_REDIS_REST_TOKEN="your_upstash_token"
+NASA_API_KEY="your_nasa_key"
+CLERK_SECRET_KEY="your_clerk_secret"
+FRONTEND_URL="http://localhost:3000"
 ```
 
-**Frontend:**
-```bash
-cp frontend/.env.example frontend/.env.local
-# Fill in: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY, NEXT_PUBLIC_CESIUM_ION_TOKEN
+**Frontend (`frontend/.env.local`):**
+```env
+NEXT_PUBLIC_API_URL="http://localhost:4000"
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your_clerk_pub_key"
+CLERK_SECRET_KEY="your_clerk_secret"
+NEXT_PUBLIC_CESIUM_ION_TOKEN="your_cesium_token"
 ```
 
-### 3. Set up database
-
+### 4. Database Setup
 ```bash
 npm run prisma:generate
 npm run prisma:push
 ```
 
-### 4. Run in development
-
+### 5. Running Locally
 ```bash
-npm install          # Install concurrently at root
-npm run dev          # Starts both frontend (3000) and backend (4000)
+# Start both servers concurrently
+npm run dev
+
+# Or for GitHub Codespaces optimized environment
+npm run dev:codespaces
 ```
 
 ---
 
-## 📡 API Endpoints
+## 🛰️ API Architecture
+
+The backend is built using **Node ESM**. All internal imports use `.js` extensions for compatibility with modern runtimes and Vercel serverless functions.
 
 | Endpoint | Description |
 |---|---|
-| `GET /api/satellites/starlink` | All Starlink positions |
-| `GET /api/launches/upcoming` | Upcoming launches (all agencies) |
-| `GET /api/launches/previous` | Past launches |
-| `GET /api/launches/spacex` | SpaceX data |
-| `GET /api/iss/position` | ISS lat/lng (10s TTL) |
-| `GET /api/iss/crew` | Current crew |
-| `GET /api/iss/stream` | Live stream URL |
-| `GET /api/media/apod` | Today's APOD |
-| `GET /api/media/apod/archive` | APOD gallery |
-| `GET /api/media/mars` | Mars rover photos |
-| `GET /api/media/nasa` | NASA image search |
-| `GET /api/news` | Space news feed |
-| `GET /health` | Health check |
+| `GET /api/satellites/starlink` | Live Starlink TLE/Position data |
+| `GET /api/launches/upcoming` | Global launch schedule (Upcoming) |
+| `GET /api/iss/position` | Real-time ISS coordinates (10s TTL) |
+| `GET /api/media/apod` | NASA Astronomy Picture of the Day |
+| `GET /api/news` | Aggregated space articles |
+| `GET /api/internal/cron/:job` | Internal cache warming triggers |
 
 ---
 
-## 📄 Pages
+## 🚢 Deployment
 
-| Route | Page |
+### Vercel (Monorepo Setup)
+This project is structured as a monorepo. Both `frontend` and `backend` are deployed as separate projects on Vercel.
+
+1. **Backend Deployment**:
+   - Framework Preset: `Other`
+   - Root Directory: `backend`
+   - Build Command: `npx prisma generate`
+   - Output Directory: `dist` (or leave default for serverless functions)
+
+2. **Frontend Deployment**:
+   - Framework Preset: `Next.js`
+   - Root Directory: `frontend`
+   - Environment Variable: `NEXT_PUBLIC_API_URL` should point to your deployed backend URL.
+
+---
+
+## 🔑 API Keys Reference
+
+| Service | Source |
 |---|---|
-| `/` | Hero · Stats · ISS · Launch · APOD · News |
-| `/satellites` | Starlink constellation tracker |
-| `/launches` | All agency launch tracker |
-| `/iss` | ISS live video + crew + telemetry |
-| `/media` | APOD · Mars · NASA gallery |
-| `/news` | Aggregated space news |
-| `/profile` | Bookmarks + alerts (auth required) |
+| NASA APIs | [api.nasa.gov](https://api.nasa.gov) |
+| N2YO Satellites | [n2yo.com/api](https://www.n2yo.com/api/) |
+| Clerk Auth | [clerk.com](https://clerk.com) |
+| Upstash Redis | [upstash.com](https://upstash.com) |
+| NeonDB | [neon.tech](https://neon.tech) |
+| Cesium Ion | [cesium.com/ion](https://cesium.com/ion) |
 
 ---
 
-## 🔑 API Keys Needed
-
-| Service | Get key at |
-|---|---|
-| NASA APIs | https://api.nasa.gov |
-| N2YO Satellites | https://www.n2yo.com/api/ |
-| Clerk Auth | https://clerk.com |
-| Upstash Redis | https://upstash.com |
-| NeonDB | https://neon.tech |
-| Cesium Ion (globe) | https://cesium.com/ion |
-
-> SpaceX API, Launch Library 2, Open Notify, and Spaceflight News API are all free with no key required.
-
----
-
-*CosmosLive — Director: Deep | Stack: Next.js · Express · NeonDB · Upstash Redis · CesiumJS*
+*CosmosLive — Architect: Deep | Optimized for LEO and Beyond.*
