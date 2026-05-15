@@ -1,22 +1,39 @@
 import { z } from 'zod';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `API error ${res.status}`);
+function getApiBase() {
+  if (typeof window !== 'undefined') {
+    // Browser requests should stay same-origin so Next.js can proxy them.
+    return '';
   }
 
-  return res.json();
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+}
+
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers = new Headers(options?.headers);
+
+  // Avoid forcing JSON headers onto GET requests, which triggers unnecessary preflights.
+  if (options?.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const url = `${getApiBase()}${path}`;
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || `API error ${res.status}`);
+    }
+
+    return res.json();
+  } catch (err: unknown) {
+    console.error(`Fetch failed for ${url}:`, err);
+    throw err;
+  }
 }
 
 // ── Zod Schemas ──────────────────────────────────────────

@@ -26,6 +26,20 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.flickr.com" },
     ],
   },
+  async rewrites() {
+    // When running on the server (rewrites), the backend is always reachable 
+    // at localhost:4000 within the same container/machine.
+    // Using the public URL here can cause issues if the container cannot
+    // resolve its own public domain.
+    const apiTarget = "http://localhost:4000";
+
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiTarget}/api/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

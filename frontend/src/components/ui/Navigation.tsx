@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SignInButton, UserButton, useAuth } from '@clerk/nextjs';
+import { useQueryClient } from '@tanstack/react-query';
+import { prefetchRouteData } from '@/lib/prefetch';
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
@@ -65,9 +67,13 @@ function AuthSection() {
 
 export function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { isSignedIn } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const isNavigating = pendingHref !== null && pendingHref !== pathname;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -91,16 +97,16 @@ export function Navigation() {
     }
   }, [isNavigating]);
 
-  // Close mobile menu and reset navigation state when pathname changes
-  useEffect(() => {
-    setMobileOpen(false);
-    setIsNavigating(false);
-  }, [pathname]);
-
   const startNav = (href: string) => {
     if (pathname !== href) {
-      setIsNavigating(true);
+      setPendingHref(href);
     }
+    setMobileOpen(false);
+  };
+
+  const warmRoute = (href: string) => {
+    void router.prefetch(href);
+    prefetchRouteData(queryClient, href, Boolean(isSignedIn));
   };
 
   return (
@@ -178,6 +184,8 @@ export function Navigation() {
                 href={link.href}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => startNav(link.href)}
+                onMouseEnter={() => warmRoute(link.href)}
+                onFocus={() => warmRoute(link.href)}
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '0.68rem',
@@ -270,6 +278,8 @@ export function Navigation() {
                     href={link.href}
                     aria-current={pathname === link.href ? 'page' : undefined}
                     onClick={() => startNav(link.href)}
+                    onMouseEnter={() => warmRoute(link.href)}
+                    onFocus={() => warmRoute(link.href)}
                     style={{
                       fontFamily: 'var(--font-display)',
                       fontSize: '2.5rem',

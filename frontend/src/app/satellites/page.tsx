@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 import { satelliteApi } from '@/lib/api';
 import { Globe } from '@/components/globe/Globe';
 import { ReticleCard } from '@/components/ui';
@@ -11,6 +11,7 @@ export default function SatellitesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [timeStr, setTimeStr] = useState('');
+  const [globeReady, setGlobeReady] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -19,6 +20,29 @@ export default function SatellitesPage() {
     updateTime();
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const enableGlobe = () => {
+      if (cancelled) return;
+      startTransition(() => setGlobeReady(true));
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(enableGlobe, { timeout: 250 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(enableGlobe, 120);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   const { data: satData, isLoading, isError } = useQuery({
@@ -87,13 +111,29 @@ export default function SatellitesPage() {
   return (
     <div style={{ paddingTop: '70px', minHeight: '100vh', background: 'var(--color-void)' }} className="select-none">
       <section style={{ position: 'relative', width: '100%', height: 'calc(100vh - 70px)', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <Globe
-            satellites={globeSatellites}
-            issPosition={null}
-            onSatelliteClick={(sat) => setSelectedId(sat.id)}
-            height={typeof window !== 'undefined' ? window.innerHeight - 70 : 800}
-          />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: 'translateY(-4%)',
+          }}
+        >
+          {globeReady ? (
+            <Globe
+              satellites={globeSatellites}
+              issPosition={null}
+              onSatelliteClick={(sat) => setSelectedId(sat.id)}
+              height={typeof window !== 'undefined' ? window.innerHeight - 70 : 800}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(0,32,64,0.45),rgba(0,0,0,0)_55%)]">
+              <div className="font-mono text-[0.7rem] tracking-[0.22em] text-cyan/70">INITIALISING ORBITAL VIEWPORT</div>
+            </div>
+          )}
         </div>
 
         <div className="absolute inset-0 pointer-events-none z-1 bg-gradient-to-b from-void/50 via-transparent to-void/80" />

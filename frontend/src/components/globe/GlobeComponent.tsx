@@ -29,6 +29,11 @@ interface GlobePoint {
   data: StarlinkSatellite | null;
 }
 
+const DEFAULT_FULL_ALTITUDE = 1.55;
+const DEFAULT_MINI_ALTITUDE = 2.1;
+const DEFAULT_FULL_VIEW = { lat: 18, lng: 0, altitude: DEFAULT_FULL_ALTITUDE };
+const DEFAULT_MINI_VIEW = { lat: 18, lng: 0, altitude: DEFAULT_MINI_ALTITUDE };
+
 export default function GlobeComponent({
   satellites = [],
   issPosition,
@@ -45,7 +50,7 @@ export default function GlobeComponent({
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const controlsPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [GlobeScene, setGlobeScene] = useState<GlobeSceneComponent | null>(null);
-  const [width, setWidth] = useState(0);
+  const [size, setSize] = useState({ width: 0, height });
 
   useEffect(() => {
     let cancelled = false;
@@ -64,14 +69,19 @@ export default function GlobeComponent({
     const container = containerRef.current;
     if (!container) return;
 
-    const updateWidth = () => setWidth(container.offsetWidth);
-    updateWidth();
+    const updateSize = () => {
+      setSize({
+        width: container.offsetWidth,
+        height: container.offsetHeight || height,
+      });
+    };
+    updateSize();
 
-    const resizeObserver = new ResizeObserver(updateWidth);
+    const resizeObserver = new ResizeObserver(updateSize);
     resizeObserver.observe(container);
 
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [height]);
 
   const allPoints = useMemo<GlobePoint[]>(() => {
     const satPoints = satellites
@@ -118,9 +128,15 @@ export default function GlobeComponent({
 
       if (focusedStarlink) {
         globeRef.current.pointOfView(
-          { lat: focusedStarlink.lat, lng: focusedStarlink.lng, altitude: mini ? 2.1 : 1.55 },
+          {
+            lat: focusedStarlink.lat,
+            lng: focusedStarlink.lng,
+            altitude: mini ? DEFAULT_MINI_ALTITUDE : DEFAULT_FULL_ALTITUDE,
+          },
           900
         );
+      } else {
+        globeRef.current.pointOfView(mini ? DEFAULT_MINI_VIEW : DEFAULT_FULL_VIEW, 900);
       }
     }, 50);
 
@@ -133,13 +149,24 @@ export default function GlobeComponent({
   }, [GlobeScene, disableScroll, focusedStarlink, mini]);
 
   useEffect(() => {
-    if (!focusedStarlink || !globeRef.current) return;
+    if (!globeRef.current) return;
 
-    globeRef.current.pointOfView(
-      { lat: focusedStarlink.lat, lng: focusedStarlink.lng, altitude: mini ? 2.1 : 1.55 },
-      900
-    );
+    if (focusedStarlink) {
+      globeRef.current.pointOfView(
+        {
+          lat: focusedStarlink.lat,
+          lng: focusedStarlink.lng,
+          altitude: mini ? DEFAULT_MINI_ALTITUDE : DEFAULT_FULL_ALTITUDE,
+        },
+        900
+      );
+      return;
+    }
+
+    globeRef.current.pointOfView(mini ? DEFAULT_MINI_VIEW : DEFAULT_FULL_VIEW, 900);
   }, [focusedStarlink, mini]);
+
+  const globeHeight = size.height || height;
 
   return (
     <div
@@ -148,14 +175,17 @@ export default function GlobeComponent({
         width: '100%',
         height: `${height}px`,
         position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         pointerEvents: disableScroll ? 'none' : 'auto',
       }}
     >
-      {GlobeScene && width > 0 ? (
+      {GlobeScene && size.width > 0 ? (
         <GlobeScene
           ref={globeRef}
-          width={width}
-          height={height}
+          width={size.width}
+          height={globeHeight}
           backgroundColor="rgba(0,0,0,0)"
           globeImageUrl={globeImageUrl}
           bumpImageUrl={bumpImageUrl}
