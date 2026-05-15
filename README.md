@@ -86,6 +86,15 @@ The backend is built using **Node ESM**. All internal imports use `.js` extensio
 
 ---
 
+## ⚡ Caching & Performance
+
+CosmosLive uses **Upstash Redis** (REST-based) for low-latency data persistence. This strategy is critical for:
+- **Rate Limit Avoidance**: Proxies and caches external API responses (NASA, SpaceDevs) to stay within free tier limits.
+- **High-Frequency Telemetry**: Stores ISS and Starlink positions with short TTLs for instant client-side retrieval.
+- **Warm Cache Jobs**: Background cron jobs automatically refresh critical data paths every few minutes.
+
+---
+
 ## 🚢 Deployment
 
 ### Vercel (Monorepo Setup)
