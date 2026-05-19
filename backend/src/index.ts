@@ -14,6 +14,7 @@ import newsRoutes from './routes/news.js';
 import userRoutes from './routes/users.js';
 import internalRoutes from './routes/internal.js';
 import { startCronJobs } from './jobs/cron.js';
+import { getErrorResponse } from './lib/errors.js';
 
 // ── Env validation at startup ─────────────────────────────
 const REQUIRED_VARS = ['DATABASE_URL'];
@@ -28,29 +29,47 @@ const PORT = process.env.PORT || 4000;
 
 app.set('trust proxy', 1);
 
+function normalizeOrigin(origin: string) {
+  try {
+    return new URL(origin.trim()).origin;
+  } catch {
+    return null;
+  }
+}
+
+export function isAllowedOrigin(origin?: string) {
+  if (!origin) return true;
+
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (!normalizedOrigin) return false;
+
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    process.env.FRONTEND_URL,
+  ]
+    .filter(Boolean)
+    .map((value) => normalizeOrigin(value!))
+    .filter((value): value is string => Boolean(value));
+
+  if (allowedOrigins.includes(normalizedOrigin)) {
+    return true;
+  }
+
+  const { hostname } = new URL(normalizedOrigin);
+  const isCodespacesPreview = /^[a-z0-9-]+-3000\.app\.github\.dev$/i.test(hostname);
+  const isVercelPreview = hostname.endsWith('.vercel.app') && hostname.split('.')[0].startsWith('cosmoslive');
+
+  return isCodespacesPreview || isVercelPreview;
+}
+
 // Security & performance middleware
 app.use(helmet({ crossOriginEmbedderPolicy: false }));
 app.use(compression());
 app.use(morgan('combined'));
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedOrigins = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    process.env.FRONTEND_URL,
-    ].filter(Boolean);
-
-    const isCodespacesPreview = Boolean(
-      origin &&
-      /^https:\/\/[a-z0-9-]+-3000\.app\.github\.dev$/i.test(origin)
-    );
-
-    const isVercelApp = Boolean(
-      origin &&
-      /^https:\/\/cosmoslive.*\.vercel\.app$/i.test(origin)
-    );
-
-    if (!origin || allowedOrigins.includes(origin) || isCodespacesPreview || isVercelApp) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
       return;
     }
@@ -96,10 +115,22 @@ app.use((_req, res) => {
 });
 
 // Global error handler
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[Error]', err.message);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
+app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const errorResponse = getErrorResponse(err);
+  const error = err instanceof Error ? err : null;
+
+  console.error('[Error]', {
+    method: req.method,
+    path: req.originalUrl,
+    status: errorResponse.status,
+    code: errorResponse.code,
+    message: error?.message ?? errorResponse.message,
+    stack: error?.stack,
+  });
+
+  res.status(errorResponse.status).json({
+    error: errorResponse.message,
+    code: errorResponse.code,
   });
 });
 

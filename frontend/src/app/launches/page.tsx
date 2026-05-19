@@ -30,11 +30,16 @@ export default function LaunchesPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { isSuccess: accountSynced } = useQuery({
+  const {
+    isSuccess: accountSynced,
+    isPending: accountSyncPending,
+    isError: accountSyncFailed,
+  } = useQuery({
     queryKey: ['user-sync', user?.id, email],
     queryFn: () => userApi.sync(user!.id, email!),
     enabled: Boolean(user?.id && email),
     staleTime: 10 * 60 * 1000,
+    retry: false,
   });
 
   const { data: bookmarksData } = useQuery({
@@ -118,6 +123,16 @@ export default function LaunchesPage() {
           </p>
         </motion.div>
 
+        {isSignedIn && accountSyncFailed && (
+          <ReticleCard className="mb-8 border border-red/20 bg-red/5 p-4">
+            <span className="data-label text-red block mb-2">ACCOUNT REGISTRY OFFLINE</span>
+            <p className="font-mono text-xs text-silver/70 leading-relaxed">
+              Save Mission and Set Alert are temporarily unavailable because the account sync request failed on the backend.
+              Check the API deployment logs for `/api/users/sync` and verify the production database is reachable and migrated.
+            </p>
+          </ReticleCard>
+        )}
+
         {/* Live Stream Focus Console */}
         {liveStream && (
           <motion.div
@@ -168,6 +183,8 @@ export default function LaunchesPage() {
                   index={i}
                   isSignedIn={Boolean(isSignedIn)}
                   accountReady={!isSignedIn || accountSynced}
+                  accountSyncPending={accountSyncPending}
+                  accountSyncFailed={accountSyncFailed}
                   isBookmarked={savedLaunchIds.has(launch.id)}
                   hasAlert={alertLaunchIds.has(launch.id)}
                   isSaving={saveLaunch.isPending && saveLaunch.variables?.id === launch.id}
@@ -282,6 +299,8 @@ function LaunchCard({
   index,
   isSignedIn,
   accountReady,
+  accountSyncPending,
+  accountSyncFailed,
   isBookmarked,
   hasAlert,
   isSaving,
@@ -293,6 +312,8 @@ function LaunchCard({
   index: number;
   isSignedIn: boolean;
   accountReady: boolean;
+  accountSyncPending: boolean;
+  accountSyncFailed: boolean;
   isBookmarked: boolean;
   hasAlert: boolean;
   isSaving: boolean;
@@ -334,14 +355,14 @@ function LaunchCard({
               {isSignedIn ? (
                 <>
                   <LaunchActionButton
-                    label={!accountReady ? 'SYNCING...' : isBookmarked ? 'SAVED' : isSaving ? 'SAVING...' : 'SAVE MISSION'}
-                    tone="cyan"
+                    label={accountSyncFailed ? 'SYNC FAILED' : accountSyncPending ? 'SYNCING...' : isBookmarked ? 'SAVED' : isSaving ? 'SAVING...' : 'SAVE MISSION'}
+                    tone={accountSyncFailed ? 'red' : 'cyan'}
                     disabled={!accountReady || isBookmarked || isSaving}
                     onClick={onSave}
                   />
                   <LaunchActionButton
-                    label={!accountReady ? 'SYNCING...' : hasAlert ? 'ALERT SET' : isCreatingAlert ? 'SETTING...' : 'SET ALERT'}
-                    tone="amber"
+                    label={accountSyncFailed ? 'SYNC FAILED' : accountSyncPending ? 'SYNCING...' : hasAlert ? 'ALERT SET' : isCreatingAlert ? 'SETTING...' : 'SET ALERT'}
+                    tone={accountSyncFailed ? 'red' : 'amber'}
                     disabled={!accountReady || hasAlert || isCreatingAlert}
                     onClick={onCreateAlert}
                   />
@@ -368,12 +389,14 @@ function LaunchActionButton({
   onClick,
 }: {
   label: string;
-  tone: 'cyan' | 'amber';
+  tone: 'cyan' | 'amber' | 'red';
   disabled: boolean;
   onClick: () => void;
 }) {
   const toneClass = tone === 'cyan'
     ? 'border-cyan/40 text-cyan hover:bg-cyan hover:text-void'
+    : tone === 'red'
+    ? 'border-red/40 text-red hover:bg-red hover:text-void'
     : 'border-amber/40 text-amber hover:bg-amber hover:text-void';
 
   return (

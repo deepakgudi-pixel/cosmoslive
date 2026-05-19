@@ -11,11 +11,16 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const email = user?.primaryEmailAddress?.emailAddress;
 
-  const { isSuccess: accountSynced } = useQuery({
+  const {
+    isSuccess: accountSynced,
+    isPending: accountSyncPending,
+    isError: accountSyncFailed,
+  } = useQuery({
     queryKey: ['user-sync', user?.id, email],
     queryFn: () => userApi.sync(user!.id, email!),
     enabled: Boolean(user?.id && email),
     staleTime: 10 * 60 * 1000,
+    retry: false,
   });
 
   const { data: bookmarksData, isLoading: bookmarksLoading } = useQuery({
@@ -130,18 +135,30 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <AccountFact label="Account created" value={createdAt} />
-              <AccountFact label="Saved launches" value={`${bookmarksData?.bookmarks.length || 0}`} />
-              <AccountFact label="Active alerts" value={`${alertsData?.alerts.length || 0}`} />
+              <AccountFact label="Saved launches" value={accountSyncFailed ? '--' : `${bookmarksData?.bookmarks.length || 0}`} />
+              <AccountFact label="Active alerts" value={accountSyncFailed ? '--' : `${alertsData?.alerts.length || 0}`} />
             </div>
           </ReticleCard>
         </motion.div>
 
+        {accountSyncFailed && (
+          <ReticleCard className="mt-10 border border-red/20 bg-red/5 p-5">
+            <span className="data-label text-red block mb-2">ACCOUNT REGISTRY OFFLINE</span>
+            <p className="font-mono text-xs text-silver/70 leading-relaxed">
+              CosmosLive could not sync your account with the backend. Profile bookmarks and alerts are temporarily unavailable
+              until `/api/users/sync` can reach the production database.
+            </p>
+          </ReticleCard>
+        )}
+
         <ProfileSection
           title="SAVED MISSIONS"
           eyebrow="DATABASE BOOKMARKS"
-          loading={bookmarksLoading || !accountSynced}
-          emptyTitle="No saved missions yet"
-          emptyBody="Use Save Mission on the launch manifest to keep upcoming missions here."
+          loading={bookmarksLoading || accountSyncPending}
+          emptyTitle={accountSyncFailed ? 'Account sync unavailable' : 'No saved missions yet'}
+          emptyBody={accountSyncFailed
+            ? 'The backend could not connect your Clerk user to the CosmosLive database. Check the API deployment logs and database schema.'
+            : 'Use Save Mission on the launch manifest to keep upcoming missions here.'}
         >
           {bookmarksData?.bookmarks.map((bookmark) => (
             <RegistryRow
@@ -161,9 +178,11 @@ export default function ProfilePage() {
         <ProfileSection
           title="LAUNCH ALERTS"
           eyebrow="ACTIVE TRIGGERS"
-          loading={alertsLoading || !accountSynced}
-          emptyTitle="No launch alerts set"
-          emptyBody="Use Set Alert on an upcoming launch to track it from your profile."
+          loading={alertsLoading || accountSyncPending}
+          emptyTitle={accountSyncFailed ? 'Account sync unavailable' : 'No launch alerts set'}
+          emptyBody={accountSyncFailed
+            ? 'Alert data is unavailable until the backend sync endpoint can write to the production database.'
+            : 'Use Set Alert on an upcoming launch to track it from your profile.'}
         >
           {alertsData?.alerts.map((alert) => (
             <RegistryRow
