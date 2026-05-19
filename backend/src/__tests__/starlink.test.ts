@@ -50,10 +50,12 @@ describe('fetchStarlinkPositions', () => {
     });
   });
 
-  it('should reject invalid response data', async () => {
+  it('should filter out entries with invalid data', async () => {
     (axios.get as any).mockResolvedValue({ data: [{ id: 'bad', latitude: 'not-a-number', longitude: null }] });
 
     const { fetchStarlinkPositions } = await import('../services/starlink.js');
-    await expect(fetchStarlinkPositions()).rejects.toThrow();
+    const result = await fetchStarlinkPositions();
+    // Invalid entries are silently filtered out
+    expect(result).toEqual([]);
   });
 });

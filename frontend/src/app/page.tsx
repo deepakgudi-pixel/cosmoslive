@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { issApi, launchApi, mediaApi, newsApi, satelliteApi } from '@/lib/api';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { TickerBar } from '@/components/sections/TickerBar';
+import { QueryErrorReset } from '@/components/ui';
 
 const IssSection = dynamic(() => import('@/components/sections/IssSection').then((mod) => mod.IssSection));
 const LaunchSection = dynamic(() => import('@/components/sections/LaunchSection').then((mod) => mod.LaunchSection));
@@ -59,12 +60,14 @@ export default function HomePage() {
 
   return (
     <div style={{ paddingTop: '70px', width: '100%', overflowX: 'hidden' }}>
-      <HeroSection
-        issPos={issPos}
-        launches={launches}
-        satData={satData}
-        crew={crew}
-      />
+      <QueryErrorReset sectionLabel="HERO TELEMETRY">
+        <HeroSection
+          issPos={issPos}
+          launches={launches}
+          satData={satData}
+          crew={crew}
+        />
+      </QueryErrorReset>
 
       <TickerBar
         satCount={satData?.count}
@@ -75,10 +78,18 @@ export default function HomePage() {
       {isSignedIn && (
         <>
           <div style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '6rem 2rem', display: 'flex', flexDirection: 'column', gap: '8rem' }}>
-            <IssSection crew={crew} />
-            <LaunchSection nextLaunch={nextLaunch} />
-            <ApodSection apod={apod} />
-            <NewsSection news={news} />
+            <QueryErrorReset sectionLabel="ISS TELEMETRY">
+              <IssSection crew={crew} />
+            </QueryErrorReset>
+            <QueryErrorReset sectionLabel="LAUNCH DATA">
+              <LaunchSection nextLaunch={nextLaunch} />
+            </QueryErrorReset>
+            <QueryErrorReset sectionLabel="DEEP SPACE OPTICS">
+              <ApodSection apod={apod} />
+            </QueryErrorReset>
+            <QueryErrorReset sectionLabel="NEWS FEED">
+              <NewsSection news={news} />
+            </QueryErrorReset>
           </div>
 
           <FooterSection />

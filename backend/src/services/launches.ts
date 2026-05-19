@@ -2,16 +2,15 @@ import axios from 'axios';
 import { z } from 'zod';
 import { getCache, setCache } from '../lib/cache.js';
 import { TTL, LaunchSchema, SpaceXLaunchSchema, SpaceXRocketSchema } from './types.js';
-import type { Launch, SpaceXLaunch, SpaceXRocket, SpaceXData, LaunchData } from './types.js';
+import type { Launch, SpaceXData, LaunchData } from './types.js';
 
 export async function fetchLaunches(): Promise<LaunchData> {
   const cacheKey = 'launches:all';
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<LaunchData>(cacheKey);
   if (cached) {
-    const parsed = cached as { upcoming: Launch[]; previous: Launch[] };
     return {
-      upcoming: z.array(LaunchSchema).parse(parsed.upcoming),
-      previous: z.array(LaunchSchema).parse(parsed.previous),
+      upcoming: z.array(LaunchSchema).parse(cached.upcoming),
+      previous: z.array(LaunchSchema).parse(cached.previous),
     };
   }
 
@@ -37,8 +36,14 @@ export async function fetchLaunches(): Promise<LaunchData> {
 
 export async function fetchSpaceXData(): Promise<SpaceXData> {
   const cacheKey = 'spacex:launches';
-  const cached = await getCache(cacheKey);
-  if (cached) return cached as SpaceXData;
+  const cached = await getCache<SpaceXData>(cacheKey);
+  if (cached) {
+    return {
+      pastLaunches: z.array(SpaceXLaunchSchema).parse(cached.pastLaunches),
+      rockets: z.array(SpaceXRocketSchema).parse(cached.rockets),
+      upcomingLaunches: z.array(SpaceXLaunchSchema).parse(cached.upcomingLaunches),
+    };
+  }
 
   const [launchesRes, rocketsRes, upcomingRes] = await Promise.all([
     axios.get('https://api.spacexdata.com/v4/launches/past', { timeout: 10000 }),

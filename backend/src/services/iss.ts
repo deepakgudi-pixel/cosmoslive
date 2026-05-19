@@ -11,7 +11,7 @@ const CREW_SOURCES = [
 
 export async function fetchISSPosition(): Promise<ISSPosition> {
   const cacheKey = 'iss:position';
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<ISSPosition>(cacheKey);
   if (cached) return ISSPositionSchema.parse(cached);
 
   const { data } = await axios.get('https://api.wheretheiss.at/v1/satellites/25544', {
@@ -33,7 +33,7 @@ export async function fetchISSPosition(): Promise<ISSPosition> {
 
 export async function fetchISSCrew(): Promise<CrewMember[]> {
   const cacheKey = 'iss:crew';
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<CrewMember[]>(cacheKey);
   if (cached) return z.array(CrewMemberSchema).parse(cached);
 
   let lastError: unknown;

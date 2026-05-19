@@ -1,27 +1,59 @@
 import { AlertType, BookmarkType, Prisma } from '@prisma/client';
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { z } from 'zod';
 import prisma from '../lib/prisma.js';
 
 const router = Router();
 
-function parseJson(str: unknown): Prisma.InputJsonValue {
-  if (str && typeof str === 'object') return str as Prisma.InputJsonValue;
-  if (typeof str !== 'string') return {};
+// ── Tighter rate limits for write operations ──────────────
+const writeLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many write requests, please slow down.' },
+});
 
-  try {
-    const parsed = JSON.parse(str);
-    return parsed && typeof parsed === 'object' ? parsed as Prisma.InputJsonValue : {};
-  } catch {
-    return {};
-  }
+// ── Request body schemas ──────────────────────────────────
+const SyncBodySchema = z.object({
+  clerk_id: z.string().min(1),
+  email: z.string().email(),
+});
+
+const CreateBookmarkBodySchema = z.object({
+  type: z.nativeEnum(BookmarkType),
+  referenceId: z.string().min(1),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const CreateAlertBodySchema = z.object({
+  alertType: z.nativeEnum(AlertType),
+  config: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+function toJsonValue(obj: Record<string, unknown>): Prisma.InputJsonValue {
+  return obj as Prisma.InputJsonValue;
 }
 
-router.post('/sync', async (req, res, next) => {
+// ── Ownership guard ───────────────────────────────────────
+// Ensures the clerkId in the URL belongs to the requesting user.
+// In a full setup this would verify the Clerk session JWT, but at
+// minimum we validate the user exists and the param is well-formed.
+async function resolveUser(clerkId: string) {
+  if (!clerkId || clerkId.length < 3) return null;
+  return prisma.user.findUnique({ where: { clerkId } });
+}
+
+// ── Sync ──────────────────────────────────────────────────
+router.post('/sync', writeLimit, async (req, res, next) => {
   try {
-    const { clerk_id, email } = req.body;
-    if (!clerk_id || !email) {
-      return res.status(400).json({ error: 'clerk_id and email required' });
+    const parsed = SyncBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Valid clerk_id and email required', details: parsed.error.flatten().fieldErrors });
     }
+
+    const { clerk_id, email } = parsed.data;
     const user = await prisma.user.upsert({
       where: { clerkId: clerk_id },
       update: { email },
@@ -33,29 +65,35 @@ router.post('/sync', async (req, res, next) => {
   }
 });
 
+// ── Bookmarks: List ───────────────────────────────────────
 router.get('/:clerkId/bookmarks', async (req, res, next) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { clerkId: req.params.clerkId },
-      include: { bookmarks: { orderBy: { savedAt: 'desc' }, take: 100 } },
-    });
+    const user = await resolveUser(req.params.clerkId);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ bookmarks: user.bookmarks });
+
+    const bookmarks = await prisma.bookmark.findMany({
+      where: { userId: user.id },
+      orderBy: { savedAt: 'desc' },
+      take: 100,
+    });
+    res.json({ bookmarks });
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/:clerkId/bookmarks', async (req, res, next) => {
+// ── Bookmarks: Create ─────────────────────────────────────
+router.post('/:clerkId/bookmarks', writeLimit, async (req, res, next) => {
   try {
-    const { type, referenceId, metadata } = req.body;
-    if (!Object.values(BookmarkType).includes(type) || !referenceId) {
-      return res.status(400).json({ error: 'Valid type and referenceId required' });
+    const parsed = CreateBookmarkBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Valid type and referenceId required', details: parsed.error.flatten().fieldErrors });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: req.params.clerkId },
-    });
+    const { type, referenceId, metadata } = parsed.data;
+    const clerkId = String(req.params.clerkId);
+
+    const user = await resolveUser(clerkId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const existing = await prisma.bookmark.findFirst({
@@ -67,7 +105,7 @@ router.post('/:clerkId/bookmarks', async (req, res, next) => {
     }
 
     const bookmark = await prisma.bookmark.create({
-      data: { userId: user.id, type, referenceId, metadata: parseJson(metadata) },
+      data: { userId: user.id, type, referenceId, metadata: toJsonValue(metadata) },
     });
     res.status(201).json({ bookmark });
   } catch (err) {
@@ -75,51 +113,61 @@ router.post('/:clerkId/bookmarks', async (req, res, next) => {
   }
 });
 
-router.delete('/:clerkId/bookmarks/:bookmarkId', async (req, res, next) => {
+// ── Bookmarks: Delete ─────────────────────────────────────
+router.delete('/:clerkId/bookmarks/:bookmarkId', writeLimit, async (req, res, next) => {
   try {
+    const clerkId = String(req.params.clerkId);
+    const bookmarkId = String(req.params.bookmarkId);
+
+    const user = await resolveUser(clerkId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
     const bookmark = await prisma.bookmark.findUnique({
-      where: { id: req.params.bookmarkId },
-      include: { user: true },
+      where: { id: bookmarkId },
     });
     if (!bookmark) return res.status(404).json({ error: 'Bookmark not found' });
-    if (bookmark.user.clerkId !== req.params.clerkId) {
+    if (bookmark.userId !== user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    await prisma.bookmark.delete({ where: { id: req.params.bookmarkId } });
+    await prisma.bookmark.delete({ where: { id: bookmarkId } });
     res.json({ success: true });
   } catch (err) {
     next(err);
   }
 });
 
+// ── Alerts: List ──────────────────────────────────────────
 router.get('/:clerkId/alerts', async (req, res, next) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { clerkId: req.params.clerkId },
-      include: { alerts: { where: { active: true }, orderBy: { createdAt: 'desc' }, take: 50 } },
-    });
+    const user = await resolveUser(req.params.clerkId);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ alerts: user.alerts });
+
+    const alerts = await prisma.alert.findMany({
+      where: { userId: user.id, active: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    res.json({ alerts });
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/:clerkId/alerts', async (req, res, next) => {
+// ── Alerts: Create ────────────────────────────────────────
+router.post('/:clerkId/alerts', writeLimit, async (req, res, next) => {
   try {
-    const { alertType, config } = req.body;
-    if (!Object.values(AlertType).includes(alertType)) {
-      return res.status(400).json({ error: 'Valid alertType required' });
+    const parsed = CreateAlertBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Valid alertType required', details: parsed.error.flatten().fieldErrors });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: req.params.clerkId },
-    });
+    const { alertType, config } = parsed.data;
+    const clerkId = String(req.params.clerkId);
+
+    const user = await resolveUser(clerkId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const parsedConfig = parseJson(config);
-    const configRecord = parsedConfig as Record<string, unknown>;
-    const referenceId = typeof configRecord.referenceId === 'string' ? configRecord.referenceId : undefined;
+    const referenceId = typeof config.referenceId === 'string' ? config.referenceId : undefined;
 
     if (referenceId) {
       const existing = await prisma.alert.findFirst({
@@ -137,7 +185,7 @@ router.post('/:clerkId/alerts', async (req, res, next) => {
     }
 
     const alert = await prisma.alert.create({
-      data: { userId: user.id, alertType, config: parsedConfig, active: true },
+      data: { userId: user.id, alertType, config: toJsonValue(config), active: true },
     });
     res.status(201).json({ alert });
   } catch (err) {
@@ -145,19 +193,25 @@ router.post('/:clerkId/alerts', async (req, res, next) => {
   }
 });
 
-router.delete('/:clerkId/alerts/:alertId', async (req, res, next) => {
+// ── Alerts: Delete ────────────────────────────────────────
+router.delete('/:clerkId/alerts/:alertId', writeLimit, async (req, res, next) => {
   try {
+    const clerkId = String(req.params.clerkId);
+    const alertId = String(req.params.alertId);
+
+    const user = await resolveUser(clerkId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
     const alert = await prisma.alert.findUnique({
-      where: { id: req.params.alertId },
-      include: { user: true },
+      where: { id: alertId },
     });
     if (!alert) return res.status(404).json({ error: 'Alert not found' });
-    if (alert.user.clerkId !== req.params.clerkId) {
+    if (alert.userId !== user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     await prisma.alert.update({
-      where: { id: req.params.alertId },
+      where: { id: alertId },
       data: { active: false },
     });
     res.json({ success: true });

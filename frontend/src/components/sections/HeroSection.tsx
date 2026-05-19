@@ -17,13 +17,52 @@ interface HeroSectionProps {
 export function HeroSection({ issPos, launches, satData }: HeroSectionProps) {
   const { isSignedIn } = useAuth();
   const [timeStr, setTimeStr] = useState('');
-  const [minsNext, setMinsNext] = useState(42);
+  const [orbitalInfo, setOrbitalInfo] = useState({ orbitalDay: 0, totalOrbits: 16, minsToSunrise: 0, lunarDay: 0, lunarPhaseLabel: '' });
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setTimeStr(now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC');
-      setMinsNext(40 + (now.getSeconds() % 5));
+
+      // ── Real ISS orbital day calculation ──────────────
+      // ISS orbital period is ~92.65 minutes = ~15.54 orbits/day
+      const ISS_ORBITAL_PERIOD_MS = 92.65 * 60 * 1000;
+      // Reference: arbitrary expedition start epoch (approx Expedition 72, Jan 2025)
+      const expeditionStartEpoch = new Date('2025-03-15T00:00:00Z').getTime();
+      const elapsedMs = now.getTime() - expeditionStartEpoch;
+      const totalOrbits = Math.floor(elapsedMs / ISS_ORBITAL_PERIOD_MS);
+      // ISS has ~16 orbits per day; compute day position in current cycle
+      const orbitsPerDay = 16;
+      const orbitalDay = (totalOrbits % orbitsPerDay) + 1;
+
+      // ── ISS sunrise estimation ────────────────────────
+      // Each orbit: ~46 min sunlight, ~46 min darkness
+      const orbitPhaseMs = elapsedMs % ISS_ORBITAL_PERIOD_MS;
+      const halfOrbit = ISS_ORBITAL_PERIOD_MS / 2;
+      const isInDaylight = orbitPhaseMs < halfOrbit;
+      const minsToSunrise = isInDaylight
+        ? Math.ceil((halfOrbit + halfOrbit - orbitPhaseMs) / 60000)
+        : Math.ceil((halfOrbit - (orbitPhaseMs - halfOrbit)) / 60000);
+
+      // ── Real lunar phase calculation ──────────────────
+      // Using a known new moon epoch and the synodic month
+      const SYNODIC_MONTH = 29.53058770576;
+      const knownNewMoon = new Date('2024-01-11T11:57:00Z').getTime();
+      const daysSinceNewMoon = (now.getTime() - knownNewMoon) / (24 * 60 * 60 * 1000);
+      const lunarAge = ((daysSinceNewMoon % SYNODIC_MONTH) + SYNODIC_MONTH) % SYNODIC_MONTH;
+      const lunarDay = Math.floor(lunarAge) + 1;
+
+      let lunarPhaseLabel = 'STABLE';
+      if (lunarAge < 1.85) lunarPhaseLabel = 'NEW MOON';
+      else if (lunarAge < 7.38) lunarPhaseLabel = 'WAXING CRESCENT';
+      else if (lunarAge < 9.23) lunarPhaseLabel = 'FIRST QUARTER';
+      else if (lunarAge < 14.77) lunarPhaseLabel = 'WAXING GIBBOUS';
+      else if (lunarAge < 16.61) lunarPhaseLabel = 'FULL MOON';
+      else if (lunarAge < 22.15) lunarPhaseLabel = 'WANING GIBBOUS';
+      else if (lunarAge < 23.99) lunarPhaseLabel = 'LAST QUARTER';
+      else lunarPhaseLabel = 'WANING CRESCENT';
+
+      setOrbitalInfo({ orbitalDay, totalOrbits: orbitsPerDay, minsToSunrise, lunarDay, lunarPhaseLabel });
     };
     updateTime();
     const timer = setInterval(updateTime, 1000);
@@ -70,10 +109,10 @@ export function HeroSection({ issPos, launches, satData }: HeroSectionProps) {
           {timeStr || 'LOADING CLOCK...'}
         </span>
         <div className="pt-2 text-[0.55rem] font-mono text-silver/40 tracking-widest hidden sm:block border-t border-white/5 mt-2">
-          <span className="text-white/80">ORBITAL DAY 12 OF 16</span> · NEXT SUNRISE <span className="text-cyan">{minsNext} MINS</span>
+          <span className="text-white/80">ORBITAL DAY {orbitalInfo.orbitalDay} OF {orbitalInfo.totalOrbits}</span> · NEXT SUNRISE <span className="text-cyan">{orbitalInfo.minsToSunrise} MINS</span>
         </div>
         <div className="text-[0.55rem] font-mono text-silver/40 tracking-widest hidden sm:block">
-          <span className="text-white/80">LUNAR DAY 12 OF 16</span> · PHASE CONTROLLER <span className="text-amber">STABLE</span>
+          <span className="text-white/80">LUNAR DAY {orbitalInfo.lunarDay} OF 30</span> · PHASE CONTROLLER <span className="text-amber">{orbitalInfo.lunarPhaseLabel}</span>
         </div>
       </div>
 

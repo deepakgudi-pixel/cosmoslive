@@ -1,14 +1,19 @@
 import axios from 'axios';
 import { z } from 'zod';
 import { getCache, setCache } from '../lib/cache.js';
-import { TTL, NewsResponseSchema, NewsArticleSchema } from './types.js';
+import { TTL, NewsResponseSchema } from './types.js';
 import type { NewsArticle } from './types.js';
 
 export const VALID_NEWS_TAGS = ['SpaceX', 'NASA', 'ISS', 'Mars', 'Moon', 'Launches', 'Webb', 'ESA', 'ISRO'];
 
-export async function fetchSpaceNews(limit = 30, offset = 0): Promise<{ count?: number; results: NewsArticle[] }> {
+export interface NewsResult {
+  count?: number;
+  results: NewsArticle[];
+}
+
+export async function fetchSpaceNews(limit = 30, offset = 0): Promise<NewsResult> {
   const cacheKey = `news:${limit}:${offset}`;
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<NewsResult>(cacheKey);
   if (cached) return NewsResponseSchema.parse(cached);
 
   const { data } = await axios.get('https://api.spaceflightnewsapi.net/v4/articles/', {
@@ -21,7 +26,7 @@ export async function fetchSpaceNews(limit = 30, offset = 0): Promise<{ count?: 
   return parsed;
 }
 
-export async function fetchFilteredNews(limit = 30, offset = 0, tag?: string) {
+export async function fetchFilteredNews(limit = 30, offset = 0, tag?: string): Promise<NewsResult> {
   let data = await fetchSpaceNews(limit + (tag ? 50 : 0), offset);
 
   if (tag && VALID_NEWS_TAGS.includes(tag)) {

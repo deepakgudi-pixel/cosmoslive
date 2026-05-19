@@ -3,6 +3,8 @@ export { CustomCursor } from './CustomCursor';
 export { CountdownTimer } from './CountdownTimer';
 export { ReticleCard } from './ReticleCard';
 export { ErrorBoundary } from './ErrorBoundary';
+export { SectionErrorBoundary } from './SectionErrorBoundary';
+export { QueryErrorReset } from './QueryErrorReset';
 export { LoadingState } from './LoadingState';
 export { EmptyState } from './EmptyState';
 export { SectionTitle } from './SectionTitle';

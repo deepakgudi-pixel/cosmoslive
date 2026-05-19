@@ -4,6 +4,9 @@ import { getCache, setCache } from '../lib/cache.js';
 import { TTL, StarlinkPositionSchema } from './types.js';
 import type { StarlinkPosition } from './types.js';
 
+// Re-use the raw schema shape for parsing SpaceX API responses.
+// The canonical StarlinkPositionSchema in types.ts is the single source
+// of truth for the normalised output.
 const RawStarlinkEntry = z.object({
   id: z.string(),
   spaceTrack: z.object({ OBJECT_NAME: z.string().optional() }).optional(),
@@ -16,7 +19,7 @@ const RawStarlinkEntry = z.object({
 
 export async function fetchStarlinkPositions(): Promise<StarlinkPosition[]> {
   const cacheKey = 'starlink:positions';
-  const cached = await getCache(cacheKey);
+  const cached = await getCache<StarlinkPosition[]>(cacheKey);
   if (cached) return z.array(StarlinkPositionSchema).parse(cached);
 
   const { data } = await axios.get('https://api.spacexdata.com/v4/starlink', {

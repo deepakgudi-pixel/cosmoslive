@@ -12,6 +12,14 @@ interface SatellitesDashboardProps {
 
 type SortKey = 'name' | 'lat' | 'lng' | 'height' | 'velocity';
 
+// Safe min/max that won't blow the call stack on large arrays
+function safeMin(values: number[]): number {
+  return values.reduce((m, v) => (v < m ? v : m), Infinity);
+}
+function safeMax(values: number[]): number {
+  return values.reduce((m, v) => (v > m ? v : m), -Infinity);
+}
+
 export function SatellitesDashboard({ satellites, isLoading, error }: SatellitesDashboardProps) {
   const [sortKey, setSortKey] = useState<SortKey>('height');
   const [sortAsc, setSortAsc] = useState(false);
@@ -27,8 +35,8 @@ export function SatellitesDashboard({ satellites, isLoading, error }: Satellites
     const avgVel = withVelocity.length
       ? withVelocity.reduce((a, b) => a + b.velocity!, 0) / withVelocity.length
       : 0;
-    const minAlt = withHeight.length ? Math.min(...withHeight.map((s) => s.height!)) : 0;
-    const maxAlt = withHeight.length ? Math.max(...withHeight.map((s) => s.height!)) : 0;
+    const minAlt = withHeight.length ? safeMin(withHeight.map((s) => s.height!)) : 0;
+    const maxAlt = withHeight.length ? safeMax(withHeight.map((s) => s.height!)) : 0;
     return { total, avgAlt, avgVel, minAlt, maxAlt };
   }, [satellites]);
 

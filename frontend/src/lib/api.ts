@@ -1,5 +1,45 @@
 import { z } from 'zod';
 
+// ── Structured API Error ─────────────────────────────────
+
+export type ApiErrorCode = 'NETWORK' | 'TIMEOUT' | 'RATE_LIMITED' | 'NOT_FOUND' | 'AUTH' | 'SERVER' | 'UNKNOWN';
+
+export class ApiError extends Error {
+  code: ApiErrorCode;
+  status: number | null;
+  retryable: boolean;
+
+  constructor(message: string, code: ApiErrorCode, status: number | null = null) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
+    this.retryable = code === 'NETWORK' || code === 'TIMEOUT' || code === 'SERVER';
+  }
+}
+
+function classifyError(err: unknown, status: number | null): ApiError {
+  if (err instanceof ApiError) return err;
+
+  const message = err instanceof Error ? err.message : 'Unknown error';
+
+  if (message.includes('fetch') || message.includes('network') || message.includes('Failed to fetch')) {
+    return new ApiError('Network connection failed', 'NETWORK');
+  }
+  if (message.includes('timeout') || message.includes('aborted')) {
+    return new ApiError('Request timed out', 'TIMEOUT');
+  }
+
+  if (status === 429) return new ApiError('Rate limited — please wait', 'RATE_LIMITED', 429);
+  if (status === 401 || status === 403) return new ApiError('Authentication required', 'AUTH', status);
+  if (status === 404) return new ApiError('Resource not found', 'NOT_FOUND', 404);
+  if (status && status >= 500) return new ApiError(`Server error (${status})`, 'SERVER', status);
+
+  return new ApiError(message, 'UNKNOWN', status);
+}
+
+// ── Core Fetch ───────────────────────────────────────────
+
 function getApiBase() {
   if (typeof window !== 'undefined') {
     // Browser requests should stay same-origin so Next.js can proxy them.
@@ -8,6 +48,9 @@ function getApiBase() {
 
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 }
+
+const MAX_RETRIES = 2;
+const RETRY_BASE_MS = 500;
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
@@ -18,23 +61,49 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   const url = `${getApiBase()}${path}`;
-  try {
-    const res = await fetch(url, {
-      ...options,
-      headers,
-    });
+  let lastError: ApiError | null = null;
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || `API error ${res.status}`);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        const apiError = classifyError(new Error(err.error || `API error ${res.status}`), res.status);
+
+        // Only retry on server errors / transient issues, not client errors
+        if (apiError.retryable && attempt < MAX_RETRIES) {
+          lastError = apiError;
+          await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+          continue;
+        }
+
+        throw apiError;
+      }
+
+      return res.json();
+    } catch (err: unknown) {
+      if (err instanceof ApiError && !err.retryable) throw err;
+
+      const apiError = err instanceof ApiError ? err : classifyError(err, null);
+
+      if (apiError.retryable && attempt < MAX_RETRIES) {
+        lastError = apiError;
+        await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+        continue;
+      }
+
+      console.error(`Fetch failed for ${url}:`, apiError.message);
+      throw apiError;
     }
-
-    return res.json();
-  } catch (err: unknown) {
-    console.error(`Fetch failed for ${url}:`, err);
-    throw err;
   }
+
+  throw lastError || new ApiError('Request failed after retries', 'UNKNOWN');
 }
+
 
 // ── Zod Schemas ──────────────────────────────────────────
 

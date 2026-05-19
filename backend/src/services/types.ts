@@ -14,16 +14,6 @@ export const TTL = {
 
 // ── Starlink ──────────────────────────────────────────────
 
-const RawStarlinkSchema = z.object({
-  id: z.string(),
-  spaceTrack: z.object({ OBJECT_NAME: z.string().optional() }).optional(),
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
-  height_km: z.number().nullable().optional(),
-  velocity_kms: z.number().nullable().optional(),
-  launch: z.string().nullable().optional(),
-});
-
 export const StarlinkPositionSchema = z.object({
   id: z.string(),
   name: z.string(),
