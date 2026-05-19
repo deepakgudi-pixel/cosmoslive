@@ -45,7 +45,12 @@ app.use(cors({
       /^https:\/\/[a-z0-9-]+-3000\.app\.github\.dev$/i.test(origin)
     );
 
-    if (!origin || allowedOrigins.includes(origin) || isCodespacesPreview) {
+    const isVercelApp = Boolean(
+      origin &&
+      /^https:\/\/cosmoslive.*\.vercel\.app$/i.test(origin)
+    );
+
+    if (!origin || allowedOrigins.includes(origin) || isCodespacesPreview || isVercelApp) {
       callback(null, true);
       return;
     }

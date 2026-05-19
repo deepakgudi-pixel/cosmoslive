@@ -14,17 +14,50 @@ export async function fetchISSPosition(): Promise<ISSPosition> {
   const cached = await getCache<ISSPosition>(cacheKey);
   if (cached) return ISSPositionSchema.parse(cached);
 
-  const { data } = await axios.get('https://api.wheretheiss.at/v1/satellites/25544', {
-    timeout: 10000,
-  });
+  let result: ISSPosition | null = null;
+  let lastError: unknown;
 
-  const result: ISSPosition = {
-    lat: data.latitude,
-    lng: data.longitude,
-    altitude: data.altitude,
-    velocity: data.velocity,
-    timestamp: Math.floor(data.timestamp),
-  };
+  // Try primary API
+  try {
+    const { data } = await axios.get('https://api.wheretheiss.at/v1/satellites/25544', {
+      timeout: 8000, // Reduced timeout so we failover faster
+    });
+
+    result = {
+      lat: data.latitude,
+      lng: data.longitude,
+      altitude: data.altitude,
+      velocity: data.velocity,
+      timestamp: Math.floor(data.timestamp),
+    };
+  } catch (err) {
+    lastError = err;
+    console.warn('[ISS API] wheretheiss.at failed, falling back to open-notify...', (err as Error).message);
+  }
+
+  // Try fallback API if primary failed
+  if (!result) {
+    try {
+      const { data } = await axios.get('http://api.open-notify.org/iss-now.json', {
+        timeout: 8000,
+      });
+
+      result = {
+        lat: parseFloat(data.iss_position.latitude),
+        lng: parseFloat(data.iss_position.longitude),
+        // Open-notify doesn't provide alt/vel, so we use average constants
+        altitude: 418.0, 
+        velocity: 27600,
+        timestamp: data.timestamp,
+      };
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  if (!result) {
+    throw lastError || new Error('All ISS position APIs failed');
+  }
 
   ISSPositionSchema.parse(result);
   await setCache(cacheKey, result, TTL.ISS_POSITION);
