@@ -94,13 +94,13 @@ export default function ProfilePage() {
 
   return (
     <ProfileShell>
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', width: '100%' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '4rem 2rem 8rem 2rem', width: '100%' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <ReticleCard className="p-6 md:p-8 bg-surface">
+          <ReticleCard className="p-8 md:p-10 bg-surface">
             <div className="flex flex-col gap-8 md:flex-row md:items-center">
               <div className="relative shrink-0">
                 {user.imageUrl ? (
@@ -131,9 +131,9 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="divider-line my-8" />
+            <div className="divider-line my-10" />
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <AccountFact label="Account created" value={createdAt} />
               <AccountFact label="Saved launches" value={accountSyncFailed ? '--' : `${bookmarksData?.bookmarks.length || 0}`} />
               <AccountFact label="Active alerts" value={accountSyncFailed ? '--' : `${alertsData?.alerts.length || 0}`} />
@@ -207,7 +207,7 @@ function ProfileShell({ children, center = false }: { children: React.ReactNode;
   return (
     <div
       style={{
-        paddingTop: '80px',
+        paddingTop: '90px',
         minHeight: '100vh',
         background: 'var(--color-void)',
         display: center ? 'flex' : 'block',
@@ -223,7 +223,7 @@ function ProfileShell({ children, center = false }: { children: React.ReactNode;
 
 function AccountFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-white/[0.03] p-4">
+    <div className="border border-white/10 bg-white/[0.03] p-5">
       <span className="data-label text-[0.55rem] text-silver/45 block mb-2">{label}</span>
       <span className="font-mono text-sm font-bold text-white">{value}</span>
     </div>
@@ -248,8 +248,8 @@ function ProfileSection({
   const hasChildren = Boolean(children && (!Array.isArray(children) || children.length > 0));
 
   return (
-    <section className="mt-10">
-      <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
+    <section className="mt-16">
+      <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
         <h2 className="font-display text-2xl text-white tracking-tight">{title}</h2>
         <span className="font-mono text-[0.65rem] text-silver/50">{eyebrow}</span>
       </div>
@@ -259,7 +259,7 @@ function ProfileSection({
           <span className="font-mono text-xs text-silver/45">SYNCING ACCOUNT REGISTRY...</span>
         </ReticleCard>
       ) : hasChildren ? (
-        <div className="space-y-3">{children}</div>
+        <div className="space-y-4">{children}</div>
       ) : (
         <ReticleCard className="bg-surface/40 p-8 text-center">
           <span className="font-mono text-xs text-silver/45 block mb-2">{emptyTitle}</span>
@@ -282,7 +282,7 @@ function RegistryRow({
   onAction: () => void;
 }) {
   return (
-    <ReticleCard className="bg-surface p-4">
+    <ReticleCard className="bg-surface p-5 sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h3 className="font-display text-xl text-white tracking-tight truncate">{title}</h3>
