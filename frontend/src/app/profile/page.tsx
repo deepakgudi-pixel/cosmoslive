@@ -100,8 +100,8 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <ReticleCard className="p-8 md:p-10 bg-surface">
-            <div className="flex flex-col gap-8 md:flex-row md:items-center">
+          <ReticleCard className="p-10 md:p-12 bg-surface">
+            <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-12">
               <div className="relative shrink-0">
                 {user.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -121,8 +121,8 @@ export default function ProfilePage() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <span className="data-label text-cyan block mb-2">SIGNED IN ACCOUNT</span>
-                <h1 className="font-display text-4xl md:text-5xl text-white tracking-tight leading-none mb-3 truncate">
+                <span className="data-label text-cyan block mb-3">SIGNED IN ACCOUNT</span>
+                <h1 className="font-display text-4xl md:text-5xl text-white tracking-tight leading-none mb-4 truncate">
                   {user.fullName || user.username || 'CosmosLive User'}
                 </h1>
                 <div className="font-mono text-xs text-silver/70 truncate">
@@ -131,9 +131,9 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="divider-line my-10" />
+            <div className="divider-line my-12" />
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               <AccountFact label="Account created" value={createdAt} />
               <AccountFact label="Saved launches" value={accountSyncFailed ? '--' : `${bookmarksData?.bookmarks.length || 0}`} />
               <AccountFact label="Active alerts" value={accountSyncFailed ? '--' : `${alertsData?.alerts.length || 0}`} />
@@ -223,8 +223,8 @@ function ProfileShell({ children, center = false }: { children: React.ReactNode;
 
 function AccountFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-white/[0.03] p-5">
-      <span className="data-label text-[0.55rem] text-silver/45 block mb-2">{label}</span>
+    <div className="border border-white/10 bg-white/[0.03] p-6 md:p-8">
+      <span className="data-label text-[0.6rem] text-silver/45 block mb-3">{label}</span>
       <span className="font-mono text-sm font-bold text-white">{value}</span>
     </div>
   );
