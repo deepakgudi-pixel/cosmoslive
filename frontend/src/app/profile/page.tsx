@@ -94,7 +94,7 @@ export default function ProfilePage() {
 
   return (
     <ProfileShell>
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '4rem 2rem 8rem 2rem', width: '100%' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '6rem 2rem 10rem 2rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '5rem' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -248,7 +248,7 @@ function ProfileSection({
   const hasChildren = Boolean(children && (!Array.isArray(children) || children.length > 0));
 
   return (
-    <section className="mt-16">
+    <section className="w-full">
       <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
         <h2 className="font-display text-2xl text-white tracking-tight">{title}</h2>
         <span className="font-mono text-[0.65rem] text-silver/50">{eyebrow}</span>
